@@ -16,10 +16,7 @@
         </nav>
 
         <div class="search-container" id="explorerControls">
-            <input type="text" id="searchInput" placeholder="Search planets or systems...">
-            <select id="filterSelect">
-                <option value="">All Resources</option>
-            </select>
+            <input type="text" id="searchInput" placeholder="Search">
         </div>
     </header>
 
@@ -41,8 +38,26 @@
                 </div>
             </div>
 
-            <div class="systems-list" id="systemsGrid">
-                <!-- Systems will be populated here -->
+            <div class="explorer-layout">
+                <div class="systems-sidebar">
+                    <h3>🌟 Systems</h3>
+                    <div class="checkbox-container" id="systemCheckboxes">
+                        <!-- System checkboxes will be populated here -->
+                    </div>
+                </div>
+
+                <div class="systems-main">
+                    <div class="systems-list" id="systemsGrid">
+                        <!-- Systems will be populated here -->
+                    </div>
+                </div>
+
+                <div class="resources-sidebar">
+                    <h3>🔗 Resources</h3>
+                    <div class="checkbox-container" id="resourceCheckboxes">
+                        <!-- Resource checkboxes will be populated here -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -105,7 +120,7 @@
         </div>
     </div>
 
-    <script src="data.js"></script>
+    <script src="data-from-json.js"></script>
     <script src="explorer.js"></script>
     <script src="analytics.js"></script>
     <script src="app.js"></script>

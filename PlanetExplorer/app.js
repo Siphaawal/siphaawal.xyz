@@ -21,29 +21,25 @@ class PlanetApp {
 
     async loadData() {
         try {
-            // Use the data from data.js instead of fetching
-            console.log('🔍 Checking for planetData...', typeof planetData);
+            console.log('🔍 Loading data from JavaScript file (converted from JSON)...');
 
             if (typeof planetData !== 'undefined') {
                 console.log('✅ planetData found');
                 console.log('📋 planetData keys:', Object.keys(planetData));
                 console.log('🗺️ mapData exists:', planetData.mapData ? 'Yes' : 'No');
 
-                if (planetData.mapData) {
+                if (planetData.mapData && Array.isArray(planetData.mapData)) {
                     console.log('📊 mapData length:', planetData.mapData.length);
                     console.log('🔍 First system sample:', planetData.mapData[0]);
-                }
 
-                this.data = planetData.mapData;
-
-                if (this.data && this.data.length > 0) {
-                    console.log(`✅ Loaded ${this.data.length} star systems`);
+                    this.data = planetData.mapData;
+                    console.log(`✅ Loaded ${this.data.length} star systems from converted JSON data`);
                 } else {
-                    console.error('❌ No data found in mapData array');
-                    console.log('🔍 Data value:', this.data);
+                    console.error('❌ No valid mapData array found');
+                    console.log('🔍 planetData structure:', planetData);
                 }
             } else {
-                console.error('❌ planetData not found. Make sure data.js is loaded.');
+                console.error('❌ planetData not found. Make sure data-from-json.js is loaded.');
                 console.log('🔍 Available globals:', Object.keys(window).filter(k => k.includes('planet')));
             }
         } catch (error) {
@@ -71,28 +67,20 @@ class PlanetApp {
         console.log('🎛️ Setting up event listeners...');
 
         const searchInput = document.getElementById('searchInput');
-        const filterSelect = document.getElementById('filterSelect');
         const closeModal = document.getElementById('closeModal');
         const modal = document.getElementById('planetModal');
         const navTabs = document.querySelectorAll('.nav-tab');
 
         console.log('🔍 Found elements:');
         console.log('- searchInput:', searchInput ? 'Found' : 'Not found');
-        console.log('- filterSelect:', filterSelect ? 'Found' : 'Not found');
         console.log('- closeModal:', closeModal ? 'Found' : 'Not found');
         console.log('- modal:', modal ? 'Found' : 'Not found');
         console.log('- navTabs:', navTabs.length, 'tabs found');
 
-        // Explorer search and filter events
+        // Explorer search events
         if (searchInput && this.planetExplorer) {
             searchInput.addEventListener('input', (e) => {
                 this.planetExplorer.handleSearch(e.target.value);
-            });
-        }
-
-        if (filterSelect && this.planetExplorer) {
-            filterSelect.addEventListener('change', (e) => {
-                this.planetExplorer.handleFilter(e.target.value);
             });
         }
 
