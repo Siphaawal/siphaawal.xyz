@@ -132,20 +132,28 @@ class PlanetExplorer {
     createPlanetsPreviewHTML(planets) {
         return planets.map(planet => {
             const resources = planet.resources || [];
-            const resourceTags = resources.slice(0, 5).map(resource =>
-                `<span class="resource-tag">${resource.name}</span>`
-            ).join('');
+            const planetTypeName = this.getPlanetTypeName(planet.type);
 
-            const moreResourcesText = resources.length > 5 ?
-                `<span class="resource-tag">+${resources.length - 5} more</span>` : '';
+            // Show all resources with richness information
+            const resourceTags = resources.map(resource => {
+                const richnessStars = '★'.repeat(resource.richness) + '☆'.repeat(5 - resource.richness);
+                return `<span class="resource-tag" title="Richness: ${resource.richness}/5">${resource.name} ${richnessStars}</span>`;
+            }).join('');
 
             const planetDiv = document.createElement('div');
             planetDiv.className = 'planet-item';
             planetDiv.innerHTML = `
-                <div class="planet-name">${planet.name}</div>
+                <div class="planet-header-info">
+                    <div class="planet-name">🪐 ${planet.name}</div>
+                    <div class="planet-type">${planetTypeName}</div>
+                    <div class="planet-meta">
+                        Orbit: ${planet.orbit?.toFixed(2) || 'N/A'} |
+                        Scale: ${planet.scale || 'N/A'} |
+                        Resources: ${resources.length}
+                    </div>
+                </div>
                 <div class="resources">
-                    ${resourceTags}
-                    ${moreResourcesText}
+                    ${resourceTags || '<span class="no-resources">No resources found</span>'}
                 </div>
             `;
 
