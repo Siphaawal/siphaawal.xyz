@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>🧪 Recipe Explorer</h1>
+
+        <nav class="navigation-tabs">
+            <button class="nav-tab active" data-tab="explorer">🌍 Explorer</button>
+            <button class="nav-tab" data-tab="analytics">📊 Analytics</button>
+        </nav>
+
+        <nav class="breadcrumb">
+            <a href="../index.html">Home</a> > Recipe Explorer
+        </nav>
+    </header>
+
+    <main>
+        <!-- Explorer Tab Content -->
+        <div id="explorerTab" class="tab-content active">
+            <div class="explorer-layout">
+                <div class="recipes-sidebar">
+                    <h3>📋 Recipe Categories</h3>
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Search recipes...">
+                    </div>
+                    <div class="checkbox-container" id="recipeCheckboxes">
+                        <!-- Recipe category checkboxes will be populated here -->
+                    </div>
+                </div>
+
+                <div class="tree-main">
+                    <div class="tree-header">
+                        <h2 id="selectedRecipeTitle">Select a Recipe</h2>
+                        <p id="selectedRecipeDescription">Choose a recipe from the left sidebar to view its dependency tree</p>
+                    </div>
+
+                    <div class="tree-container" id="treeContainer">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">🌲</div>
+                            <h3>Recipe Tree Visualization</h3>
+                            <p>Select recipes from the left sidebar to explore their crafting dependencies and see how resources flow through the recipe chain.</p>
+                            <div class="placeholder-tips">
+                                <div class="tip">🔍 <strong>Search:</strong> Use the search bar to find specific recipes</div>
+                                <div class="tip">☑️ <strong>Categories:</strong> Check recipe categories to view their dependency trees</div>
+                                <div class="tip">🌿 <strong>Tree View:</strong> Visualize how raw materials become final products</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab Content -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-header">
+                <h2>📊 Recipe Analytics</h2>
+                <p>Analyze recipe complexity, resource requirements, and construction patterns across all recipes</p>
+            </div>
+
+            <div class="analytics-stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalRecipeCount">0</span>
+                    <span class="stat-label">Total Recipes</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="averageConstructionTime">0</span>
+                    <span class="stat-label">Avg Construction Time</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="maxTier">0</span>
+                    <span class="stat-label">Highest Tier</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="uniqueIngredients">0</span>
+                    <span class="stat-label">Unique Ingredients</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="complexRecipes">0</span>
+                    <span class="stat-label">Complex Recipes (5+ ingredients)</span>
+                </div>
+            </div>
+
+            <div class="analytics-sections">
+                <div class="analytics-section">
+                    <h3>⏱️ Longest Construction Time</h3>
+                    <p class="section-note">Recipes with the longest construction/crafting times</p>
+                    <div id="longestTime" class="recipe-analysis-grid">
+                        <!-- Longest time recipes will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🔧 Most Resource Intensive</h3>
+                    <p class="section-note">Recipes requiring the most individual ingredients</p>
+                    <div id="mostIngredients" class="recipe-analysis-grid">
+                        <!-- Most ingredients recipes will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🏆 Highest Tier Recipes</h3>
+                    <p class="section-note">Most advanced recipes by tier level</p>
+                    <div id="highestTier" class="recipe-analysis-grid">
+                        <!-- Highest tier recipes will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🌟 Most Complex Dependencies</h3>
+                    <p class="section-note">Recipes with the most diverse ingredient types</p>
+                    <div id="mostComplex" class="recipe-analysis-grid">
+                        <!-- Most complex recipes will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🏭 Infrastructure Giants</h3>
+                    <p class="section-note">Largest infrastructure and building recipes</p>
+                    <div id="infrastructureGiants" class="recipe-analysis-grid">
+                        <!-- Infrastructure recipes will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="recipes-data.js"></script>
+    <script src="data.js"></script>
+    <script src="tree-renderer.js"></script>
+    <script src="analytics.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
