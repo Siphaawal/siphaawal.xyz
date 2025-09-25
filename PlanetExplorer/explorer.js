@@ -478,4 +478,13 @@ class PlanetExplorer {
         };
         return planetTypes[type] || `Type ${type}`;
     }
+
+    // Helper method for testing - filters systems by name
+    filterSystems(searchTerm) {
+        if (!searchTerm) return [];
+        const term = searchTerm.toLowerCase();
+        return this.data.filter(system =>
+            system.name.toLowerCase().includes(term)
+        );
+    }
 }

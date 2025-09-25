@@ -2,16 +2,17 @@
 function processRecipeData() {
     console.log('🔄 Processing recipe data...');
 
-    if (!rawRecipeData || !rawRecipeData.recipes) {
+    const dataSource = window.rawRecipeData || rawRecipeData;
+    if (!dataSource || !dataSource.recipes) {
         console.error('❌ Raw recipe data not found');
         return { categories: [] };
     }
 
-    console.log(`📊 Processing ${rawRecipeData.recipes.length} recipes`);
+    console.log(`📊 Processing ${dataSource.recipes.length} recipes`);
 
     // Group recipes by resourceType
     const grouped = {};
-    rawRecipeData.recipes.forEach(recipe => {
+    dataSource.recipes.forEach(recipe => {
         const category = recipe.resourceType || 'Other';
         if (!grouped[category]) {
             grouped[category] = [];
@@ -88,3 +89,5 @@ function getCategoryIcon(category) {
 
 // Initialize the recipe data immediately when this script loads
 const recipeData = processRecipeData();
+// Make available globally for tests
+window.recipeData = recipeData;

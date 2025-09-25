@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Explorer Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0c1123;
+            color: #ffffff;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .test-header h1 {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .test-btn {
+            background: rgba(100, 255, 218, 0.2);
+            border: 1px solid rgba(100, 255, 218, 0.5);
+            border-radius: 8px;
+            color: #64ffda;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .test-btn:hover {
+            background: rgba(100, 255, 218, 0.3);
+            transform: translateY(-1px);
+        }
+
+        #testOutput {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: pre-line;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .status {
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .status.loading {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            color: #ffc107;
+        }
+
+        .status.success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.5);
+            color: #28a745;
+        }
+
+        .status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            color: #dc3545;
+        }
+
+        .hidden-elements {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🧪 Recipe Explorer Unit Tests</h1>
+        <p>Testing Recipe Explorer functionality and components</p>
+    </div>
+
+    <div class="test-controls">
+        <button class="test-btn" onclick="runTests()">▶️ Run All Tests</button>
+        <button class="test-btn" onclick="clearOutput()">🗑️ Clear Output</button>
+        <button class="test-btn" onclick="window.location.href='index.html'">🏠 Back to Explorer</button>
+    </div>
+
+    <div id="statusIndicator" class="status" style="display: none;"></div>
+    <div id="testOutput">Click "Run All Tests" to start testing...</div>
+
+    <!-- Hidden elements needed for tests -->
+    <div class="hidden-elements">
+        <div id="recipeCheckboxes"></div>
+        <div id="treeContainer"></div>
+        <div id="selectedRecipeTitle"></div>
+        <div id="selectedRecipeDescription"></div>
+        <input id="searchInput" />
+    </div>
+
+    <!-- Load all the required scripts in correct order -->
+    <script src="recipes-data.js"></script>
+    <script src="data.js"></script>
+    <script src="enhanced-tree-renderer.js"></script>
+    <script src="analytics.js"></script>
+    <script src="app.js"></script>
+    <script src="tests.js"></script>
+
+    <script>
+        let originalConsoleLog, originalConsoleError;
+
+        function runTests() {
+            const statusDiv = document.getElementById('statusIndicator');
+            const outputDiv = document.getElementById('testOutput');
+
+            // Show loading status
+            statusDiv.className = 'status loading';
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = '🔄 Running tests...';
+
+            // Clear previous output
+            outputDiv.textContent = '';
+
+            // Capture console output
+            const capturedOutput = [];
+            originalConsoleLog = console.log;
+            originalConsoleError = console.error;
+
+            console.log = (...args) => {
+                const message = args.join(' ');
+                capturedOutput.push(message);
+                outputDiv.textContent += message + '\n';
+                originalConsoleLog.apply(console, args);
+            };
+
+            console.error = (...args) => {
+                const message = '❌ ERROR: ' + args.join(' ');
+                capturedOutput.push(message);
+                outputDiv.textContent += message + '\n';
+                originalConsoleError.apply(console, args);
+            };
+
+            // Run tests
+            setTimeout(async () => {
+                try {
+                    await window.runRecipeTests();
+
+                    // Restore console
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+
+                    // Show success status
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ Tests completed successfully!';
+
+                } catch (error) {
+                    // Restore console
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+
+                    // Show error status
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Tests failed: ' + error.message;
+
+                    outputDiv.textContent += '\n💥 Unexpected error: ' + error.message;
+                }
+            }, 100);
+        }
+
+        function clearOutput() {
+            document.getElementById('testOutput').textContent = 'Output cleared. Click "Run All Tests" to start testing...';
+            document.getElementById('statusIndicator').style.display = 'none';
+        }
+
+        // Auto-scroll to bottom when output changes
+        const outputDiv = document.getElementById('testOutput');
+        const observer = new MutationObserver(() => {
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        });
+        observer.observe(outputDiv, { childList: true, characterData: true, subtree: true });
+    </script>
+</body>
+</html>

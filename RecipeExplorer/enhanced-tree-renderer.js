@@ -38,18 +38,9 @@ class EnhancedTreeRenderer {
             });
         }
 
-        console.log('🔄 Building recipe cache for enhanced tree renderer');
         recipesToCache.forEach((recipe, index) => {
-            if (index < 3) {
-                console.log(`  🔧 Adding recipe to cache: "${recipe.name}" (ID: ${recipe.id})`);
-            }
             this.recipeCache.set(recipe.name, recipe);
         });
-        console.log(`✅ Built recipe cache with ${this.recipeCache.size} recipes`);
-
-        // Log first few recipe names for debugging
-        const firstFewNames = [...this.recipeCache.keys()].slice(0, 5);
-        console.log('🎯 First 5 cached recipe names:', firstFewNames.map(name => `"${name}"`));
     }
 
     setupContainer() {
@@ -249,28 +240,18 @@ class EnhancedTreeRenderer {
     }
 
     renderRecipeTree(recipeName) {
-        console.log(`🔍 Looking for recipe: "${recipeName}"`);
-
         // Ensure recipe cache is built
         if (this.recipeCache.size === 0) {
-            console.log('⚠️ Recipe cache is empty, trying to rebuild...');
             this.buildRecipeCache();
         }
-
-        console.log(`📦 Recipe cache contains ${this.recipeCache.size} recipes`);
 
         const recipe = this.recipeCache.get(recipeName);
         if (!recipe) {
             console.error(`❌ Recipe "${recipeName}" not found in cache!`);
-            console.log('🔍 Available recipe names (first 10):');
-            const availableNames = [...this.recipeCache.keys()].slice(0, 10);
-            availableNames.forEach(name => console.log(`  - "${name}"`));
-
             this.renderError(`Recipe "${recipeName}" not found`);
             return;
         }
 
-        console.log(`✅ Found recipe: "${recipe.name}"`);
         this.clearTree();
         const treeData = this.buildTreeData(recipe, new Set());
         const layout = this.calculateLayout(treeData);

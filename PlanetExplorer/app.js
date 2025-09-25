@@ -8,15 +8,10 @@ class PlanetApp {
     }
 
     async init() {
-        console.log('🚀 Initializing Planet App...');
         await this.loadData();
-        console.log('📡 Data loaded, initializing modules...');
         this.initializeModules();
-        console.log('🎛️ Setting up event listeners...');
         this.setupEventListeners();
-        console.log('📊 Updating initial view...');
         this.updateInitialView();
-        console.log('✅ Initialization complete');
     }
 
     async loadData() {

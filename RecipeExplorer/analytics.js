@@ -23,16 +23,12 @@ class RecipeAnalytics {
     }
 
     renderAnalytics() {
-        console.log('📊 Rendering recipe analytics...');
-
         this.updateStats();
         this.renderLongestConstructionTime();
         this.renderMostResourceIntensive();
         this.renderHighestTierRecipes();
         this.renderMostComplexDependencies();
         this.renderInfrastructureGiants();
-
-        console.log('✅ Analytics rendered successfully');
     }
 
     updateStats() {
@@ -259,8 +255,6 @@ class RecipeAnalytics {
     }
 
     showRecipeDetails(recipe) {
-        console.log('Recipe details:', recipe);
-
         // Create a detailed modal
         this.createRecipeModal(recipe);
     }

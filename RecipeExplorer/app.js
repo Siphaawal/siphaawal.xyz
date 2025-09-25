@@ -10,21 +10,15 @@ class RecipeExplorerApp {
     }
 
     init() {
-        console.log('🧪 Initializing Recipe Explorer...');
-
         this.extractAllRecipes();
         this.initializeTreeRenderer();
         this.initializeAnalytics();
         this.populateRecipeCheckboxes();
         this.setupEventListeners();
         this.setupTabSwitching();
-        console.log('✅ Recipe Explorer initialized');
     }
 
     extractAllRecipes() {
-        console.log('🔍 Extracting all recipes from data...');
-        console.log('📊 Recipe data:', recipeData);
-
         this.allRecipes = [];
 
         if (!recipeData || !recipeData.categories) {
@@ -33,13 +27,7 @@ class RecipeExplorerApp {
         }
 
         recipeData.categories.forEach((category, categoryIndex) => {
-            console.log(`📂 Category ${categoryIndex + 1}: ${category.name} (${category.recipes.length} recipes)`);
-
             category.recipes.forEach((recipe, recipeIndex) => {
-                if (recipeIndex < 3) { // Only log first 3 recipes per category to avoid spam
-                    console.log(`  📋 Recipe ${recipeIndex + 1}: ${recipe.name} (${recipe.type})`);
-                }
-
                 this.allRecipes.push({
                     ...recipe,
                     category: category.name,
@@ -49,12 +37,23 @@ class RecipeExplorerApp {
         });
 
         this.filteredRecipes = [...this.allRecipes];
-
-        console.log(`✅ Extracted ${this.allRecipes.length} total recipes from ${recipeData.categories.length} categories`);
     }
 
     initializeTreeRenderer() {
         const treeContainer = document.getElementById('treeContainer');
+
+        // Check if EnhancedTreeRenderer is available
+        if (typeof EnhancedTreeRenderer === 'undefined') {
+            console.error('❌ EnhancedTreeRenderer class not found! Make sure enhanced-tree-renderer.js is loaded.');
+            treeContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>❌ Tree Renderer Error</h3>
+                    <p>Enhanced Tree Renderer not loaded. Please refresh the page.</p>
+                </div>
+            `;
+            return;
+        }
+
         this.treeRenderer = new EnhancedTreeRenderer(treeContainer);
 
         // Ensure the tree renderer uses the same recipes as the app
@@ -64,32 +63,25 @@ class RecipeExplorerApp {
     }
 
     initializeAnalytics() {
-        this.analytics = new RecipeAnalytics(recipeData);
-        console.log('📊 Analytics initialized');
+        if (typeof RecipeAnalytics !== 'undefined' && recipeData) {
+            this.analytics = new RecipeAnalytics(recipeData);
+        } else {
+            console.warn('⚠️ RecipeAnalytics or recipeData not available');
+        }
     }
 
     populateRecipeCheckboxes() {
         const container = document.getElementById('recipeCheckboxes');
         container.innerHTML = '';
 
-        console.log('📋 Populating recipe checkboxes...');
-        console.log('🔍 Total categories:', recipeData.categories.length);
-        console.log('🔍 Total recipes available:', this.allRecipes.length);
-        console.log('🔍 Filtered recipes:', this.filteredRecipes.length);
-
         // Create expandable categories
         recipeData.categories.forEach((category, categoryIndex) => {
-            console.log(`📂 Processing category: ${category.name}`);
-
             // Filter recipes for this category based on current filters
             const categoryRecipes = category.recipes.filter(recipe =>
                 this.filteredRecipes.some(filtered => filtered.id === recipe.id)
             );
 
-            console.log(`📋 ${category.name} has ${categoryRecipes.length} recipes after filtering`);
-
             if (categoryRecipes.length === 0) {
-                console.log(`⚠️ Skipping ${category.name} - no recipes after filtering`);
                 return;
             }
 
@@ -114,11 +106,8 @@ class RecipeExplorerApp {
             const recipeContent = document.createElement('div');
             recipeContent.className = 'category-recipes collapsed';
 
-            console.log(`Creating category recipes container with classes: ${recipeContent.className}`);
-
             // Recipe checkboxes
             categoryRecipes.forEach(recipe => {
-                console.log(`✅ Adding checkbox for: ${recipe.name}`);
 
                 const checkboxItem = document.createElement('div');
                 checkboxItem.className = 'checkbox-item';
@@ -149,33 +138,16 @@ class RecipeExplorerApp {
             categoryHeader.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Category header clicked:', category.name);
                 this.toggleCategory(categoryContainer);
             });
 
             categoryContainer.appendChild(categoryHeader);
             categoryContainer.appendChild(recipeContent);
             container.appendChild(categoryContainer);
-
-            console.log(`✅ Added category: ${category.name} with ${categoryRecipes.length} recipes`);
         });
-
-        console.log('✅ Recipe checkboxes populated');
-
-        // Debug: Check if any categories were actually added
-        const categoryContainers = container.querySelectorAll('.category-container');
-        console.log(`📊 Total category containers created: ${categoryContainers.length}`);
-
-        if (categoryContainers.length === 0) {
-            console.error('❌ No category containers were created! This might indicate a data loading issue.');
-            console.log('🔍 Raw recipe data check:', recipeData);
-            console.log('🔍 All recipes length:', this.allRecipes.length);
-            console.log('🔍 Filtered recipes length:', this.filteredRecipes.length);
-        }
     }
 
     toggleCategory(categoryContainer) {
-        console.log('Toggle category called');
         const recipeContent = categoryContainer.querySelector('.category-recipes');
         const expandIcon = categoryContainer.querySelector('.expand-icon');
 
@@ -185,18 +157,15 @@ class RecipeExplorerApp {
         }
 
         const isCollapsed = recipeContent.classList.contains('collapsed');
-        console.log('Current state - collapsed:', isCollapsed);
 
         if (isCollapsed) {
             // Expand
             recipeContent.classList.remove('collapsed');
             expandIcon.textContent = '▼';
-            console.log('Expanding category - removed collapsed class');
         } else {
             // Collapse
             recipeContent.classList.add('collapsed');
             expandIcon.textContent = '▶';
-            console.log('Collapsing category - added collapsed class');
         }
     }
 
@@ -221,7 +190,6 @@ class RecipeExplorerApp {
     }
 
     switchTab(tabName) {
-        console.log(`🔄 Switching to ${tabName} tab`);
 
         // Update tab buttons
         document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -239,7 +207,6 @@ class RecipeExplorerApp {
 
         // Initialize analytics data when switching to analytics tab
         if (tabName === 'analytics' && this.analytics) {
-            console.log('📊 Rendering analytics...');
             this.analytics.renderAnalytics();
         }
     }
@@ -252,9 +219,9 @@ class RecipeExplorerApp {
         } else {
             this.filteredRecipes = this.allRecipes.filter(recipe =>
                 recipe.name.toLowerCase().includes(term) ||
-                recipe.description.toLowerCase().includes(term) ||
+                (recipe.description && recipe.description.toLowerCase().includes(term)) ||
                 recipe.category.toLowerCase().includes(term) ||
-                recipe.inputs.some(input => input.name.toLowerCase().includes(term))
+                (recipe.inputs && recipe.inputs.some(input => input.name.toLowerCase().includes(term)))
             );
         }
 
@@ -331,10 +298,8 @@ class RecipeExplorerApp {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🌟 DOM Content Loaded - Starting Recipe Explorer');
     try {
         window.recipeExplorerApp = new RecipeExplorerApp();
-        console.log('✅ Recipe Explorer App instance created successfully');
     } catch (error) {
         console.error('💥 Failed to create Recipe Explorer App:', error);
     }
