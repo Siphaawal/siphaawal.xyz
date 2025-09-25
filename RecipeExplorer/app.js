@@ -55,7 +55,7 @@ class RecipeExplorerApp {
 
     initializeTreeRenderer() {
         const treeContainer = document.getElementById('treeContainer');
-        this.treeRenderer = new TreeRenderer(treeContainer);
+        this.treeRenderer = new EnhancedTreeRenderer(treeContainer);
     }
 
     initializeAnalytics() {
@@ -72,8 +72,8 @@ class RecipeExplorerApp {
         console.log('🔍 Total recipes available:', this.allRecipes.length);
         console.log('🔍 Filtered recipes:', this.filteredRecipes.length);
 
-        // Create checkboxes for each category
-        recipeData.categories.forEach(category => {
+        // Create expandable categories
+        recipeData.categories.forEach((category, categoryIndex) => {
             console.log(`📂 Processing category: ${category.name}`);
 
             // Filter recipes for this category based on current filters
@@ -88,15 +88,28 @@ class RecipeExplorerApp {
                 return;
             }
 
-            // Category header
+            // Create category container
+            const categoryContainer = document.createElement('div');
+            categoryContainer.className = 'category-container';
+            categoryContainer.setAttribute('data-category', category.name);
+
+            // Category header (expandable)
             const categoryHeader = document.createElement('div');
-            categoryHeader.className = 'category-header';
+            categoryHeader.className = 'category-header expandable';
             categoryHeader.innerHTML = `
-                <h4 style="color: #64ffda; margin: 1rem 0 0.5rem 0; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
-                    ${category.icon} ${category.name} (${categoryRecipes.length})
-                </h4>
+                <div class="category-title">
+                    <span class="expand-icon">▶</span>
+                    <span class="category-info">
+                        ${category.icon} ${category.name} (${categoryRecipes.length})
+                    </span>
+                </div>
             `;
-            container.appendChild(categoryHeader);
+
+            // Recipe content container (initially hidden)
+            const recipeContent = document.createElement('div');
+            recipeContent.className = 'category-recipes collapsed';
+
+            console.log(`Creating category recipes container with classes: ${recipeContent.className}`);
 
             // Recipe checkboxes
             categoryRecipes.forEach(recipe => {
@@ -124,11 +137,51 @@ class RecipeExplorerApp {
                 checkboxItem.appendChild(checkbox);
                 checkboxItem.appendChild(label);
                 checkboxItem.appendChild(typeSpan);
-                container.appendChild(checkboxItem);
+                recipeContent.appendChild(checkboxItem);
             });
+
+            // Add click handler for category expansion
+            categoryHeader.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Category header clicked:', category.name);
+                this.toggleCategory(categoryContainer);
+            });
+
+            categoryContainer.appendChild(categoryHeader);
+            categoryContainer.appendChild(recipeContent);
+            container.appendChild(categoryContainer);
+
+            console.log(`✅ Added category: ${category.name} with ${categoryRecipes.length} recipes`);
         });
 
         console.log('✅ Recipe checkboxes populated');
+    }
+
+    toggleCategory(categoryContainer) {
+        console.log('Toggle category called');
+        const recipeContent = categoryContainer.querySelector('.category-recipes');
+        const expandIcon = categoryContainer.querySelector('.expand-icon');
+
+        if (!recipeContent || !expandIcon) {
+            console.error('Could not find recipe content or expand icon');
+            return;
+        }
+
+        const isCollapsed = recipeContent.classList.contains('collapsed');
+        console.log('Current state - collapsed:', isCollapsed);
+
+        if (isCollapsed) {
+            // Expand
+            recipeContent.classList.remove('collapsed');
+            expandIcon.textContent = '▼';
+            console.log('Expanding category - removed collapsed class');
+        } else {
+            // Collapse
+            recipeContent.classList.add('collapsed');
+            expandIcon.textContent = '▶';
+            console.log('Collapsing category - added collapsed class');
+        }
     }
 
     setupEventListeners() {

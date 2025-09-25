@@ -148,17 +148,70 @@ main {
 .checkbox-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
+}
+
+/* Category Container Styles */
+.category-container {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+}
+
+.category-header.expandable {
+    cursor: pointer;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+/* Remove :has() selector for better compatibility */
+
+.category-header.expandable:hover {
+    background: rgba(100, 255, 218, 0.1);
+}
+
+.category-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.expand-icon {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+    color: #64ffda;
+}
+
+.category-info {
+    color: #64ffda;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.category-recipes {
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 0 0 8px 8px;
+    padding: 0.5rem;
+    display: block;
+}
+
+.category-recipes.collapsed {
+    display: none;
 }
 
 .checkbox-item {
     display: flex;
     align-items: center;
-    padding: 0.75rem;
-    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
     transition: all 0.2s ease;
     cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 0.25rem 0;
 }
 
 .checkbox-item:hover {
@@ -1024,5 +1077,112 @@ main {
 
     .analytics-stats {
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+/* Enhanced Tree Renderer Styles */
+.tree-controls {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 0.75rem;
+    border: 1px solid rgba(100, 255, 218, 0.3);
+}
+
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.zoom-btn {
+    background: rgba(100, 255, 218, 0.2);
+    border: 1px solid rgba(100, 255, 218, 0.5);
+    border-radius: 8px;
+    color: #64ffda;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    font-weight: bold;
+    min-width: 40px;
+    text-align: center;
+}
+
+.zoom-btn:hover {
+    background: rgba(100, 255, 218, 0.3);
+    border-color: rgba(100, 255, 218, 0.7);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(100, 255, 218, 0.3);
+}
+
+.zoom-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(100, 255, 218, 0.2);
+}
+
+.zoom-level {
+    color: #64ffda;
+    font-size: 0.85rem;
+    font-weight: bold;
+    min-width: 45px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced tree container styles */
+.tree-container {
+    position: relative;
+    background: radial-gradient(ellipse at center, rgba(12, 17, 35, 0.9) 0%, rgba(12, 17, 35, 1) 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(100, 255, 218, 0.2);
+}
+
+.tree-container svg {
+    background: radial-gradient(circle at 20% 20%, rgba(100, 255, 218, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(79, 172, 254, 0.05) 0%, transparent 50%);
+}
+
+/* Node hover effects enhancement */
+.tree-container svg g:hover {
+    filter: drop-shadow(0 0 10px rgba(100, 255, 218, 0.5));
+}
+
+/* Loading state */
+.tree-container.loading::after {
+    content: '⏳ Rendering enhanced tree view...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #64ffda;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    z-index: 1000;
+}
+
+/* Responsive tree controls */
+@media (max-width: 768px) {
+    .tree-controls {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        top: auto;
+    }
+
+    .zoom-controls {
+        justify-content: center;
+    }
+
+    .zoom-btn {
+        flex: 1;
+        max-width: 60px;
     }
 }
