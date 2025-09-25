@@ -15,21 +15,35 @@ class EnhancedTreeRenderer {
         this.setupContainer();
     }
 
-    buildRecipeCache() {
-        if (!window.recipeData || !window.recipeData.categories) {
-            console.warn('⚠️ Recipe data not available yet, deferring cache build');
-            return;
+    buildRecipeCache(allRecipes = null) {
+        // Use provided recipes if available, otherwise try to get from global recipeData
+        let recipesToCache = allRecipes;
+
+        if (!recipesToCache) {
+            if (!window.recipeData || !window.recipeData.categories) {
+                console.warn('⚠️ Recipe data not available yet, deferring cache build');
+                return;
+            }
+
+            // Extract recipes the same way as app.js does
+            recipesToCache = [];
+            window.recipeData.categories.forEach(category => {
+                category.recipes.forEach(recipe => {
+                    recipesToCache.push({
+                        ...recipe,
+                        category: category.name,
+                        categoryIcon: category.icon
+                    });
+                });
+            });
         }
 
         console.log('🔄 Building recipe cache for enhanced tree renderer');
-        window.recipeData.categories.forEach((category, categoryIndex) => {
-            console.log(`📂 Processing category ${categoryIndex + 1}: ${category.name} (${category.recipes.length} recipes)`);
-            category.recipes.forEach((recipe, recipeIndex) => {
-                if (categoryIndex === 0 && recipeIndex < 3) {
-                    console.log(`  🔧 Adding recipe to cache: "${recipe.name}" (ID: ${recipe.id})`);
-                }
-                this.recipeCache.set(recipe.name, recipe);
-            });
+        recipesToCache.forEach((recipe, index) => {
+            if (index < 3) {
+                console.log(`  🔧 Adding recipe to cache: "${recipe.name}" (ID: ${recipe.id})`);
+            }
+            this.recipeCache.set(recipe.name, recipe);
         });
         console.log(`✅ Built recipe cache with ${this.recipeCache.size} recipes`);
 
@@ -239,11 +253,11 @@ class EnhancedTreeRenderer {
 
         // Ensure recipe cache is built
         if (this.recipeCache.size === 0) {
+            console.log('⚠️ Recipe cache is empty, trying to rebuild...');
             this.buildRecipeCache();
         }
 
-        console.log(`📦 Recipe cache contains ${this.recipeCache.size} recipes:`);
-        console.log([...this.recipeCache.keys()].slice(0, 5).map(name => `"${name}"`));
+        console.log(`📦 Recipe cache contains ${this.recipeCache.size} recipes`);
 
         const recipe = this.recipeCache.get(recipeName);
         if (!recipe) {
@@ -251,15 +265,6 @@ class EnhancedTreeRenderer {
             console.log('🔍 Available recipe names (first 10):');
             const availableNames = [...this.recipeCache.keys()].slice(0, 10);
             availableNames.forEach(name => console.log(`  - "${name}"`));
-
-            // Try to find similar names
-            const similarNames = [...this.recipeCache.keys()].filter(name =>
-                name.toLowerCase().includes(recipeName.toLowerCase()) ||
-                recipeName.toLowerCase().includes(name.toLowerCase())
-            );
-            if (similarNames.length > 0) {
-                console.log('🎯 Similar recipe names found:', similarNames);
-            }
 
             this.renderError(`Recipe "${recipeName}" not found`);
             return;

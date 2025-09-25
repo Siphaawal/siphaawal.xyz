@@ -56,6 +56,11 @@ class RecipeExplorerApp {
     initializeTreeRenderer() {
         const treeContainer = document.getElementById('treeContainer');
         this.treeRenderer = new EnhancedTreeRenderer(treeContainer);
+
+        // Ensure the tree renderer uses the same recipes as the app
+        if (this.allRecipes.length > 0) {
+            this.treeRenderer.buildRecipeCache(this.allRecipes);
+        }
     }
 
     initializeAnalytics() {
