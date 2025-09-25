@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaimStake Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>🏗️ ClaimStake Explorer</h1>
+
+        <nav class="navigation-tabs">
+            <button class="nav-tab active" data-tab="explorer">🏢 Explorer</button>
+            <button class="nav-tab" data-tab="analytics">📊 Analytics</button>
+        </nav>
+
+        <nav class="breadcrumb">
+            <a href="../index.html">Home</a> > ClaimStake Explorer
+        </nav>
+    </header>
+
+    <main>
+        <!-- Explorer Tab Content -->
+        <div id="explorerTab" class="tab-content active">
+            <div class="explorer-layout">
+                <div class="buildings-sidebar">
+                    <h3>🏗️ Building Categories</h3>
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Search buildings...">
+                    </div>
+
+                    <div class="stats-overview">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Buildings:</span>
+                            <span class="stat-value" id="totalBuildings">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Filtered:</span>
+                            <span class="stat-value" id="filteredBuildings">0</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-sections">
+                        <div class="filter-section">
+                            <h4>By Tier</h4>
+                            <div class="checkbox-container" id="tierFilters">
+                                <!-- Tier filters will be populated here -->
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <h4>By Type</h4>
+                            <div class="checkbox-container" id="typeFilters">
+                                <!-- Type filters will be populated here -->
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <h4>Special Properties</h4>
+                            <div class="checkbox-container" id="propertyFilters">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="comesWithStake" value="comesWithStake">
+                                    <label for="comesWithStake">Comes with Stake</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="cannotRemove" value="cannotRemove">
+                                    <label for="cannotRemove">Cannot Remove</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="hasExtraction" value="hasExtraction">
+                                    <label for="hasExtraction">Has Resource Extraction</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="buildings-main">
+                    <div class="buildings-header">
+                        <h2 id="selectedBuildingTitle">ClaimStake Buildings</h2>
+                        <p id="selectedBuildingDescription">Explore buildings for your claim stakes - construction costs, resource generation, and strategic planning</p>
+                    </div>
+
+                    <div class="buildings-container" id="buildingsContainer">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">🏗️</div>
+                            <h3>ClaimStake Building Explorer</h3>
+                            <p>Use the filters and search to explore buildings for your claim stakes. Find the perfect buildings for your resource generation and construction needs.</p>
+                            <div class="placeholder-tips">
+                                <div class="tip">🔍 <strong>Search:</strong> Find buildings by name or description</div>
+                                <div class="tip">🏢 <strong>Filter by Tier:</strong> Browse buildings by their tier level</div>
+                                <div class="tip">⚡ <strong>Filter by Type:</strong> Find specific building categories</div>
+                                <div class="tip">🎯 <strong>Special Properties:</strong> Filter by unique building features</div>
+                                <div class="tip">📊 <strong>Analytics:</strong> Switch to analytics tab for detailed insights</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab Content -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-header">
+                <h2>📊 ClaimStake Building Analytics</h2>
+                <p>Comprehensive analysis of building statistics, costs, and resource generation</p>
+            </div>
+
+            <div class="analytics-stats">
+                <div class="stat-card">
+                    <h3>Total Buildings</h3>
+                    <div class="stat-number" id="analyticsTotal">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Unique Tiers</h3>
+                    <div class="stat-number" id="analyticsUniqueTiers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Resource Types</h3>
+                    <div class="stat-number" id="analyticsResourceTypes">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Construction Materials</h3>
+                    <div class="stat-number" id="analyticsConstructionMaterials">0</div>
+                </div>
+            </div>
+
+            <div class="analytics-sections" id="analyticsContent">
+                <!-- Analytics content will be populated by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Building Details Modal -->
+    <div id="buildingModal" class="building-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Building Details</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Modal content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="buildings-data.js"></script>
+    <script src="data.js"></script>
+    <script src="explorer.js"></script>
+    <script src="analytics.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
