@@ -22,12 +22,20 @@ class EnhancedTreeRenderer {
         }
 
         console.log('🔄 Building recipe cache for enhanced tree renderer');
-        window.recipeData.categories.forEach(category => {
-            category.recipes.forEach(recipe => {
+        window.recipeData.categories.forEach((category, categoryIndex) => {
+            console.log(`📂 Processing category ${categoryIndex + 1}: ${category.name} (${category.recipes.length} recipes)`);
+            category.recipes.forEach((recipe, recipeIndex) => {
+                if (categoryIndex === 0 && recipeIndex < 3) {
+                    console.log(`  🔧 Adding recipe to cache: "${recipe.name}" (ID: ${recipe.id})`);
+                }
                 this.recipeCache.set(recipe.name, recipe);
             });
         });
         console.log(`✅ Built recipe cache with ${this.recipeCache.size} recipes`);
+
+        // Log first few recipe names for debugging
+        const firstFewNames = [...this.recipeCache.keys()].slice(0, 5);
+        console.log('🎯 First 5 cached recipe names:', firstFewNames.map(name => `"${name}"`));
     }
 
     setupContainer() {
@@ -227,17 +235,37 @@ class EnhancedTreeRenderer {
     }
 
     renderRecipeTree(recipeName) {
+        console.log(`🔍 Looking for recipe: "${recipeName}"`);
+
         // Ensure recipe cache is built
         if (this.recipeCache.size === 0) {
             this.buildRecipeCache();
         }
 
+        console.log(`📦 Recipe cache contains ${this.recipeCache.size} recipes:`);
+        console.log([...this.recipeCache.keys()].slice(0, 5).map(name => `"${name}"`));
+
         const recipe = this.recipeCache.get(recipeName);
         if (!recipe) {
+            console.error(`❌ Recipe "${recipeName}" not found in cache!`);
+            console.log('🔍 Available recipe names (first 10):');
+            const availableNames = [...this.recipeCache.keys()].slice(0, 10);
+            availableNames.forEach(name => console.log(`  - "${name}"`));
+
+            // Try to find similar names
+            const similarNames = [...this.recipeCache.keys()].filter(name =>
+                name.toLowerCase().includes(recipeName.toLowerCase()) ||
+                recipeName.toLowerCase().includes(name.toLowerCase())
+            );
+            if (similarNames.length > 0) {
+                console.log('🎯 Similar recipe names found:', similarNames);
+            }
+
             this.renderError(`Recipe "${recipeName}" not found`);
             return;
         }
 
+        console.log(`✅ Found recipe: "${recipe.name}"`);
         this.clearTree();
         const treeData = this.buildTreeData(recipe, new Set());
         const layout = this.calculateLayout(treeData);
