@@ -178,6 +178,12 @@ class PlanetApp {
             this.planetExplorer.updateStats();
         }
     }
+
+    updateStats() {
+        if (this.planetExplorer) {
+            this.planetExplorer.updateStats();
+        }
+    }
 }
 
 // Initialize the application when the DOM is loaded

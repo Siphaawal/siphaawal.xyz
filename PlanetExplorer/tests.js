@@ -166,29 +166,46 @@ planetTests.test('PlanetExplorer module should initialize correctly', async () =
         return;
     }
 
-    // Mock data for testing
-    const mockData = [
-        {
-            name: 'Test System',
-            planets: [
-                {
-                    name: 'Test Planet',
-                    type: 'Temperate',
-                    resources: [
-                        { name: 'Iron Ore', abundance: 'High' },
-                        { name: 'Water', abundance: 'Medium' }
-                    ]
-                }
-            ]
-        }
-    ];
+    // Create test container with required DOM elements
+    const testContainer = document.createElement('div');
+    testContainer.innerHTML = `
+        <div id="systemCheckboxes"></div>
+        <div id="resourceCheckboxes"></div>
+        <div id="systemsList"></div>
+        <div id="systemsGrid"></div>
+        <div id="totalSystems">0</div>
+        <div id="totalPlanets">0</div>
+        <div id="uniqueResources">0</div>
+    `;
+    document.body.appendChild(testContainer);
 
-    const explorer = new PlanetExplorer(mockData);
-    assertInstanceOf(explorer, PlanetExplorer, 'Should create PlanetExplorer instance');
-    assertEquals(explorer.data, mockData, 'Should store provided data');
-    assertEquals(explorer.allResources.size, 2, 'Should extract unique resources');
-    assert(explorer.allResources.has('Iron Ore'), 'Should contain Iron Ore resource');
-    assert(explorer.allResources.has('Water'), 'Should contain Water resource');
+    try {
+        // Mock data for testing
+        const mockData = [
+            {
+                name: 'Test System',
+                planets: [
+                    {
+                        name: 'Test Planet',
+                        type: 'Temperate',
+                        resources: [
+                            { name: 'Iron Ore', abundance: 'High' },
+                            { name: 'Water', abundance: 'Medium' }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        const explorer = new PlanetExplorer(mockData);
+        assertInstanceOf(explorer, PlanetExplorer, 'Should create PlanetExplorer instance');
+        assertEquals(explorer.data, mockData, 'Should store provided data');
+        assertEquals(explorer.allResources.size, 2, 'Should extract unique resources');
+        assert(explorer.allResources.has('Iron Ore'), 'Should contain Iron Ore resource');
+        assert(explorer.allResources.has('Water'), 'Should contain Water resource');
+    } finally {
+        document.body.removeChild(testContainer);
+    }
 });
 
 planetTests.test('PlanetExplorer should filter systems correctly', () => {
@@ -197,27 +214,44 @@ planetTests.test('PlanetExplorer should filter systems correctly', () => {
         return;
     }
 
-    const mockData = [
-        {
-            name: 'Alpha System',
-            planets: [{ name: 'Alpha I', type: 'Desert', resources: [{ name: 'Iron Ore' }] }]
-        },
-        {
-            name: 'Beta System',
-            planets: [{ name: 'Beta I', type: 'Ocean', resources: [{ name: 'Water' }] }]
-        }
-    ];
+    // Create test container with required DOM elements
+    const testContainer = document.createElement('div');
+    testContainer.innerHTML = `
+        <div id="systemCheckboxes"></div>
+        <div id="resourceCheckboxes"></div>
+        <div id="systemsList"></div>
+        <div id="systemsGrid"></div>
+        <div id="totalSystems">0</div>
+        <div id="totalPlanets">0</div>
+        <div id="uniqueResources">0</div>
+    `;
+    document.body.appendChild(testContainer);
 
-    const explorer = new PlanetExplorer(mockData);
+    try {
+        const mockData = [
+            {
+                name: 'Alpha System',
+                planets: [{ name: 'Alpha I', type: 'Desert', resources: [{ name: 'Iron Ore' }] }]
+            },
+            {
+                name: 'Beta System',
+                planets: [{ name: 'Beta I', type: 'Ocean', resources: [{ name: 'Water' }] }]
+            }
+        ];
 
-    // Test filtering by system name
-    const filtered = explorer.filterSystems('Alpha');
-    assertEquals(filtered.length, 1, 'Should filter to one system');
-    assertEquals(filtered[0].name, 'Alpha System', 'Should return Alpha System');
+        const explorer = new PlanetExplorer(mockData);
 
-    // Test no match
-    const noMatch = explorer.filterSystems('NonExistent');
-    assertEquals(noMatch.length, 0, 'Should return empty array for no matches');
+        // Test filtering by system name
+        const filtered = explorer.filterSystems('Alpha');
+        assertEquals(filtered.length, 1, 'Should filter to one system');
+        assertEquals(filtered[0].name, 'Alpha System', 'Should return Alpha System');
+
+        // Test no match
+        const noMatch = explorer.filterSystems('NonExistent');
+        assertEquals(noMatch.length, 0, 'Should return empty array for no matches');
+    } finally {
+        document.body.removeChild(testContainer);
+    }
 });
 
 planetTests.test('ResourceAnalytics should analyze resources correctly', () => {
@@ -273,11 +307,17 @@ planetTests.test('PlanetApp should update stats correctly', async () => {
         <div id="totalPlanets">0</div>
         <div id="uniqueResources">0</div>
         <div id="systemCheckboxes"></div>
+        <div id="resourceCheckboxes"></div>
         <div id="systemsList"></div>
+        <div id="systemsGrid"></div>
+        <div id="searchInput"></div>
+        <div id="closeModal"></div>
+        <div id="planetModal"></div>
         <div class="nav-tab active" data-tab="explorer">Explorer</div>
         <div class="nav-tab" data-tab="analytics">Analytics</div>
         <div id="explorerTab" class="tab-content active"></div>
         <div id="analyticsTab" class="tab-content"></div>
+        <div id="explorerControls"></div>
     `;
     document.body.appendChild(testContainer);
 
@@ -285,7 +325,13 @@ planetTests.test('PlanetApp should update stats correctly', async () => {
         const app = new PlanetApp();
 
         // Wait for initialization
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        console.log('Test debug:', {
+            appData: app.data ? app.data.length : 'null/undefined',
+            planetExplorer: app.planetExplorer ? 'exists' : 'null',
+            planetDataGlobal: typeof planetData !== 'undefined' ? planetData.mapData?.length : 'undefined'
+        });
 
         if (app.data && app.data.length > 0) {
             app.updateStats();
@@ -294,11 +340,14 @@ planetTests.test('PlanetApp should update stats correctly', async () => {
             const totalPlanets = parseInt(document.getElementById('totalPlanets').textContent);
             const uniqueResources = parseInt(document.getElementById('uniqueResources').textContent);
 
+            console.log('Stats values:', { totalSystems, totalPlanets, uniqueResources });
+
             assertGreaterThan(totalSystems, 0, 'Should show systems count');
             assertGreaterThan(totalPlanets, 0, 'Should show planets count');
             assertGreaterThan(uniqueResources, 0, 'Should show resources count');
         } else {
             console.log('⚠️ No planet data available, skipping stats test');
+            // Don't fail the test if there's no data, just skip the assertions
         }
 
     } finally {

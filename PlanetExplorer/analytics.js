@@ -257,4 +257,28 @@ class ResourceAnalytics {
     getAnalyticsData() {
         return this.resourceAnalytics;
     }
+
+    // Method for testing - returns resource distribution data
+    getResourceDistribution() {
+        if (!this.resourceAnalytics) {
+            return {};
+        }
+
+        const distribution = {};
+
+        // Create distribution data from locationData
+        if (this.resourceAnalytics.locationData) {
+            this.resourceAnalytics.locationData.forEach((locations, resourceName) => {
+                // Count unique systems for this resource
+                const uniqueSystems = new Set(locations.map(loc => loc.system));
+                distribution[resourceName] = {
+                    systems: uniqueSystems.size,
+                    totalOccurrences: locations.length,
+                    locations: locations
+                };
+            });
+        }
+
+        return distribution;
+    }
 }

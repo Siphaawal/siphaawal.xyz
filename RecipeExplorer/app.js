@@ -10,12 +10,27 @@ class RecipeExplorerApp {
     }
 
     init() {
+        console.log('🚀 Initializing Recipe Explorer App...');
+
         this.extractAllRecipes();
-        this.initializeTreeRenderer();
-        this.initializeAnalytics();
+
+        try {
+            this.initializeTreeRenderer();
+        } catch (error) {
+            console.error('❌ Tree renderer initialization failed, but continuing:', error);
+        }
+
+        try {
+            this.initializeAnalytics();
+        } catch (error) {
+            console.error('❌ Analytics initialization failed, but continuing:', error);
+        }
+
         this.populateRecipeCheckboxes();
         this.setupEventListeners();
         this.setupTabSwitching();
+
+        console.log('✅ Recipe Explorer App initialization complete');
     }
 
     extractAllRecipes() {
@@ -25,6 +40,8 @@ class RecipeExplorerApp {
             console.error('❌ No recipe data available');
             return;
         }
+
+        console.log('📊 Extracting recipes from', recipeData.categories.length, 'categories');
 
         recipeData.categories.forEach((category, categoryIndex) => {
             category.recipes.forEach((recipe, recipeIndex) => {
@@ -37,6 +54,7 @@ class RecipeExplorerApp {
         });
 
         this.filteredRecipes = [...this.allRecipes];
+        console.log('✅ Extracted', this.allRecipes.length, 'total recipes');
     }
 
     initializeTreeRenderer() {
@@ -45,16 +63,29 @@ class RecipeExplorerApp {
         // Check if EnhancedTreeRenderer is available
         if (typeof EnhancedTreeRenderer === 'undefined') {
             console.error('❌ EnhancedTreeRenderer class not found! Make sure enhanced-tree-renderer.js is loaded.');
+            console.log('Available globals:', Object.keys(window).filter(k => k.includes('Tree')));
             treeContainer.innerHTML = `
                 <div class="error-message">
                     <h3>❌ Tree Renderer Error</h3>
                     <p>Enhanced Tree Renderer not loaded. Please refresh the page.</p>
+                    <p>If this persists, clear your browser cache.</p>
                 </div>
             `;
             return;
         }
 
-        this.treeRenderer = new EnhancedTreeRenderer(treeContainer);
+        try {
+            this.treeRenderer = new EnhancedTreeRenderer(treeContainer);
+        } catch (error) {
+            console.error('❌ Failed to create EnhancedTreeRenderer:', error);
+            treeContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>❌ Tree Renderer Error</h3>
+                    <p>Failed to initialize tree renderer: ${error.message}</p>
+                </div>
+            `;
+            return;
+        }
 
         // Ensure the tree renderer uses the same recipes as the app
         if (this.allRecipes.length > 0) {
@@ -72,7 +103,25 @@ class RecipeExplorerApp {
 
     populateRecipeCheckboxes() {
         const container = document.getElementById('recipeCheckboxes');
+        if (!container) {
+            console.error('❌ Recipe checkboxes container not found!');
+            return;
+        }
+
         container.innerHTML = '';
+
+        if (!recipeData || !recipeData.categories) {
+            console.error('❌ Recipe data not available for populating checkboxes');
+            container.innerHTML = `
+                <div class="error-message">
+                    <h3>❌ Recipe Data Error</h3>
+                    <p>Recipe data not loaded. Please refresh the page.</p>
+                </div>
+            `;
+            return;
+        }
+
+        console.log('📦 Populating recipe checkboxes with', recipeData.categories.length, 'categories');
 
         // Create expandable categories
         recipeData.categories.forEach((category, categoryIndex) => {

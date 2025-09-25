@@ -88,6 +88,14 @@ function getCategoryIcon(category) {
 }
 
 // Initialize the recipe data immediately when this script loads
+console.log('🔄 Initializing recipe data...');
 const recipeData = processRecipeData();
 // Make available globally for tests
 window.recipeData = recipeData;
+console.log('✅ Recipe data initialized:', recipeData ? 'Success' : 'Failed');
+if (recipeData && recipeData.categories) {
+    console.log('📊 Recipe data stats:', {
+        categories: recipeData.categories.length,
+        totalRecipes: recipeData.categories.reduce((sum, cat) => sum + cat.recipes.length, 0)
+    });
+}
