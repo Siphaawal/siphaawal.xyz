@@ -16,11 +16,18 @@ class EnhancedTreeRenderer {
     }
 
     buildRecipeCache() {
-        recipeData.categories.forEach(category => {
+        if (!window.recipeData || !window.recipeData.categories) {
+            console.warn('⚠️ Recipe data not available yet, deferring cache build');
+            return;
+        }
+
+        console.log('🔄 Building recipe cache for enhanced tree renderer');
+        window.recipeData.categories.forEach(category => {
             category.recipes.forEach(recipe => {
                 this.recipeCache.set(recipe.name, recipe);
             });
         });
+        console.log(`✅ Built recipe cache with ${this.recipeCache.size} recipes`);
     }
 
     setupContainer() {
@@ -220,6 +227,11 @@ class EnhancedTreeRenderer {
     }
 
     renderRecipeTree(recipeName) {
+        // Ensure recipe cache is built
+        if (this.recipeCache.size === 0) {
+            this.buildRecipeCache();
+        }
+
         const recipe = this.recipeCache.get(recipeName);
         if (!recipe) {
             this.renderError(`Recipe "${recipeName}" not found`);
@@ -514,6 +526,11 @@ class EnhancedTreeRenderer {
     }
 
     renderMultipleRecipes(recipeNames) {
+        // Ensure recipe cache is built
+        if (this.recipeCache.size === 0) {
+            this.buildRecipeCache();
+        }
+
         if (recipeNames.length === 0) {
             this.renderPlaceholder();
             return;

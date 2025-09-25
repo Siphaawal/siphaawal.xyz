@@ -156,6 +156,17 @@ class RecipeExplorerApp {
         });
 
         console.log('✅ Recipe checkboxes populated');
+
+        // Debug: Check if any categories were actually added
+        const categoryContainers = container.querySelectorAll('.category-container');
+        console.log(`📊 Total category containers created: ${categoryContainers.length}`);
+
+        if (categoryContainers.length === 0) {
+            console.error('❌ No category containers were created! This might indicate a data loading issue.');
+            console.log('🔍 Raw recipe data check:', recipeData);
+            console.log('🔍 All recipes length:', this.allRecipes.length);
+            console.log('🔍 Filtered recipes length:', this.filteredRecipes.length);
+        }
     }
 
     toggleCategory(categoryContainer) {
