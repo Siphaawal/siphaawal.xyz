@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planet Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>🪐 Planet Explorer</h1>
+
+        <nav class="navigation-tabs">
+            <button class="nav-tab active" data-tab="explorer">🌍 Explorer</button>
+            <button class="nav-tab" data-tab="analytics">📊 Analytics</button>
+        </nav>
+
+        <div class="search-container" id="explorerControls">
+            <input type="text" id="searchInput" placeholder="Search planets or systems...">
+            <select id="filterSelect">
+                <option value="">All Resources</option>
+            </select>
+        </div>
+    </header>
+
+    <main>
+        <!-- Explorer Tab Content -->
+        <div id="explorerTab" class="tab-content active">
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalSystems">0</span>
+                    <span class="stat-label">Star Systems</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalPlanets">0</span>
+                    <span class="stat-label">Planets</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="uniqueResources">0</span>
+                    <span class="stat-label">Resource Types</span>
+                </div>
+            </div>
+
+            <div class="systems-grid" id="systemsGrid">
+                <!-- Systems will be populated here -->
+            </div>
+        </div>
+
+        <!-- Analytics Tab Content -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-header">
+                <h2>📊 Resource Analytics</h2>
+                <p>Analyze resource distribution and scarcity across the galaxy</p>
+            </div>
+
+            <div class="analytics-stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="scarcestCount">0</span>
+                    <span class="stat-label">Ultra Rare Resources</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="averageRichness">0</span>
+                    <span class="stat-label">Average Richness</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="topSystemsCount">0</span>
+                    <span class="stat-label">Resource-Rich Systems</span>
+                </div>
+            </div>
+
+            <div class="analytics-sections">
+                <div class="analytics-section">
+                    <h3>🔥 Scarcest Resources</h3>
+                    <p class="section-note">The rarest resources in the galaxy, found in the fewest locations</p>
+                    <div id="scarcestResources" class="resource-analysis-grid">
+                        <!-- Scarcest resources will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>💎 Highest Quality Resources</h3>
+                    <p class="section-note">Resources with the highest average richness across all deposits</p>
+                    <div id="highestQuality" class="resource-analysis-grid">
+                        <!-- Highest quality resources will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🌟 Top Resource Locations</h3>
+                    <p class="section-note">Star systems ranked by number of unique resource types (resource diversity across all planets). Strategic Score is a system rating from your data (meaning not defined here).</p>
+                    <div id="topLocations" class="location-analysis-grid">
+                        <!-- Top locations will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="planetModal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <div id="modalContent">
+                <!-- Planet details will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="explorer.js"></script>
+    <script src="analytics.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Read(//c/Users/khawa/Desktop/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
