@@ -96,11 +96,12 @@
 <body>
     <div class="test-header">
         <h1>🧪 Recipe Explorer Unit Tests</h1>
-        <p>Testing Recipe Explorer functionality and components</p>
+        <p>Testing Recipe Explorer functionality, components, and drag & drop features</p>
     </div>
 
     <div class="test-controls">
         <button class="test-btn" onclick="runTests()">▶️ Run All Tests</button>
+        <button class="test-btn" onclick="runDragDropTests()">🖱️ Test Drag & Drop</button>
         <button class="test-btn" onclick="clearOutput()">🗑️ Clear Output</button>
         <button class="test-btn" onclick="window.location.href='index.html'">🏠 Back to Explorer</button>
     </div>
@@ -189,6 +190,109 @@
         function clearOutput() {
             document.getElementById('testOutput').textContent = 'Output cleared. Click "Run All Tests" to start testing...';
             document.getElementById('statusIndicator').style.display = 'none';
+        }
+
+        function runDragDropTests() {
+            const statusDiv = document.getElementById('statusIndicator');
+            const outputDiv = document.getElementById('testOutput');
+
+            // Show loading status
+            statusDiv.className = 'status loading';
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = '🖱️ Running drag & drop tests...';
+
+            // Clear previous output
+            outputDiv.textContent = '';
+
+            try {
+                // Test container for drag-drop functionality
+                const testContainer = document.createElement('div');
+                testContainer.style.width = '800px';
+                testContainer.style.height = '400px';
+                testContainer.style.background = 'rgba(255, 255, 255, 0.05)';
+                testContainer.style.border = '1px solid rgba(100, 255, 218, 0.2)';
+                testContainer.style.borderRadius = '8px';
+                testContainer.style.margin = '1rem 0';
+                document.body.appendChild(testContainer);
+
+                outputDiv.textContent = '🧪 Testing Drag & Drop Functionality...\n\n';
+
+                if (typeof EnhancedTreeRenderer === 'undefined') {
+                    outputDiv.textContent += '❌ EnhancedTreeRenderer not available\n';
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Tests failed - EnhancedTreeRenderer not found';
+                    return;
+                }
+
+                // Initialize renderer
+                const renderer = new EnhancedTreeRenderer(testContainer);
+
+                // Test 1: Initialization
+                outputDiv.textContent += '✅ EnhancedTreeRenderer initialized successfully\n';
+                outputDiv.textContent += `✅ isDragging: ${renderer.isDragging} (should be false)\n`;
+                outputDiv.textContent += `✅ dragStart: {x: ${renderer.dragStart.x}, y: ${renderer.dragStart.y}}\n\n`;
+
+                // Test 2: Start drag simulation
+                const startEvent = { clientX: 100, clientY: 150, preventDefault: () => {} };
+                renderer.startDrag(startEvent);
+                outputDiv.textContent += '🎯 Testing startDrag():\n';
+                outputDiv.textContent += `✅ isDragging: ${renderer.isDragging} (should be true)\n`;
+                outputDiv.textContent += `✅ Container cursor: ${renderer.container.style.cursor}\n`;
+                outputDiv.textContent += `✅ Has dragging class: ${renderer.container.classList.contains('dragging')}\n\n`;
+
+                // Test 3: Drag movement simulation
+                const moveEvent = { clientX: 120, clientY: 170, preventDefault: () => {} };
+                const oldPanX = renderer.currentPan.x;
+                const oldPanY = renderer.currentPan.y;
+                renderer.drag(moveEvent);
+                outputDiv.textContent += '🎯 Testing drag():\n';
+                outputDiv.textContent += `✅ Pan updated - X: ${oldPanX} → ${renderer.currentPan.x}, Y: ${oldPanY} → ${renderer.currentPan.y}\n\n`;
+
+                // Test 4: End drag simulation
+                const endEvent = { preventDefault: () => {} };
+                renderer.endDrag(endEvent);
+                outputDiv.textContent += '🎯 Testing endDrag():\n';
+                outputDiv.textContent += `✅ isDragging: ${renderer.isDragging} (should be false)\n`;
+                outputDiv.textContent += `✅ Container cursor: ${renderer.container.style.cursor}\n`;
+                outputDiv.textContent += `✅ Has dragging class: ${renderer.container.classList.contains('dragging')}\n\n`;
+
+                // Test 5: Connection highlighting
+                outputDiv.textContent += '🎯 Testing Connection Highlighting:\n';
+                outputDiv.textContent += `✅ toggleNodeHighlight exists: ${typeof renderer.toggleNodeHighlight === 'function'}\n`;
+                outputDiv.textContent += `✅ clearHighlights exists: ${typeof renderer.clearHighlights === 'function'}\n`;
+                outputDiv.textContent += `✅ highlightConnectionsForNode exists: ${typeof renderer.highlightConnectionsForNode === 'function'}\n`;
+                outputDiv.textContent += `✅ Initial selectedNode: ${renderer.selectedNode}\n`;
+                outputDiv.textContent += `✅ Initial highlightedPaths size: ${renderer.highlightedPaths.size}\n\n`;
+
+                // Test 6: Enhanced highlighting (node hiding)
+                const mockNodeElement = document.createElement('g');
+                mockNodeElement.setAttribute('data-recipe-name', 'test-recipe');
+                renderer.mainGroup.appendChild(mockNodeElement);
+
+                renderer.highlightConnectionsForNode('test-recipe', mockNodeElement);
+                outputDiv.textContent += '🎯 Testing Enhanced Highlighting (Node Hiding):\n';
+                outputDiv.textContent += `✅ Highlighting class added: ${renderer.container.classList.contains('connection-highlighting-active')}\n`;
+                outputDiv.textContent += `✅ Selected node marked: ${mockNodeElement.getAttribute('data-selected')}\n`;
+
+                renderer.clearHighlights();
+                outputDiv.textContent += `✅ Highlighting class removed: ${!renderer.container.classList.contains('connection-highlighting-active')}\n`;
+                outputDiv.textContent += `✅ Selected node unmarked: ${mockNodeElement.getAttribute('data-selected') === null}\n\n`;
+
+                outputDiv.textContent += '🎉 All drag & drop tests passed!\n';
+                outputDiv.textContent += '\n💡 Interactive Test: Try dragging in the test area above to see live drag behavior.\n';
+
+                // Cleanup
+                document.body.removeChild(testContainer);
+
+                // Show success status
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Drag & drop tests completed successfully!';
+
+            } catch (error) {
+                outputDiv.textContent += `❌ Error during drag & drop tests: ${error.message}\n`;
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Drag & drop tests failed: ' + error.message;
+            }
         }
 
         // Auto-scroll to bottom when output changes

@@ -1138,23 +1138,222 @@ main {
     position: relative;
     background: radial-gradient(ellipse at center, rgba(12, 17, 35, 0.9) 0%, rgba(12, 17, 35, 1) 100%);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: auto; /* Enable both horizontal and vertical scrolling */
     border: 1px solid rgba(100, 255, 218, 0.2);
+    scroll-behavior: smooth;
+    cursor: grab;
+    user-select: none; /* Prevent text selection while dragging */
+}
+
+/* Drag and drop cursor states */
+.tree-container.dragging {
+    cursor: grabbing;
+}
+
+.tree-container.dragging .recipe-node {
+    pointer-events: none; /* Only disable pointer events on nodes during drag */
+}
+
+/* Smooth dragging visual feedback */
+.tree-container.dragging {
+    transition: none; /* Disable transitions during drag for smoother experience */
 }
 
 .tree-container svg {
     background: radial-gradient(circle at 20% 20%, rgba(100, 255, 218, 0.05) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(79, 172, 254, 0.05) 0%, transparent 50%);
+    display: block;
+    min-height: 100%;
+    cursor: grab; /* Ensure SVG also shows grab cursor */
 }
 
-/* Node hover effects enhancement */
-.tree-container svg g:hover {
-    filter: drop-shadow(0 0 10px rgba(100, 255, 218, 0.5));
+.tree-container.dragging svg {
+    cursor: grabbing;
+}
+
+/* Stable node hover effects - no flickering */
+.tree-container svg g.recipe-node-stable {
+    transition: none; /* Remove transitions that cause flickering */
+}
+
+.tree-container svg g.recipe-node-stable[data-hovered="true"] rect {
+    stroke-width: 2.5 !important;
+    opacity: 1 !important;
+    filter: drop-shadow(0 2px 4px rgba(100, 255, 218, 0.3));
+}
+
+.tree-container svg g.recipe-node-stable rect {
+    stroke-width: 1.5;
+    opacity: 0.9;
+    transition: stroke-width 0.1s ease, opacity 0.1s ease;
+}
+
+/* Navigation hint styles */
+.navigation-hint {
+    animation: fadeInOut 8s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+.hint-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hint-icon {
+    animation: bounceHorizontal 1.5s infinite;
+}
+
+@keyframes bounceHorizontal {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(5px); }
+}
+
+/* Custom scrollbar styling for better UX */
+.tree-container::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin: 2px;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, rgba(100, 255, 218, 0.4), rgba(79, 172, 254, 0.4));
+    border-radius: 6px;
+    border: 1px solid rgba(100, 255, 218, 0.2);
+    transition: background 0.2s ease;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, rgba(100, 255, 218, 0.6), rgba(79, 172, 254, 0.6));
+}
+
+.tree-container::-webkit-scrollbar-corner {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Connection highlighting styles */
+.tree-container svg g.recipe-node[data-selected="true"] rect {
+    stroke: #ffd700 !important;
+    stroke-width: 3px !important;
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+}
+
+.tree-container svg g.recipe-node[data-connected="true"] rect {
+    stroke: #00f2fe !important;
+    stroke-width: 2.5px !important;
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.4));
+}
+
+.tree-container svg g.recipe-node[data-selected="true"] {
+    z-index: 100;
+}
+
+.tree-container svg g.recipe-node[data-connected="true"] {
+    z-index: 50;
+}
+
+/* Enhanced connection highlighting - hide unconnected nodes */
+.tree-container.connection-highlighting-active svg g.recipe-node:not([data-selected]):not([data-connected]) {
+    opacity: 0.1 !important;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.tree-container.connection-highlighting-active svg g.recipe-node:not([data-selected]):not([data-connected]) rect {
+    filter: grayscale(100%) blur(0.5px);
+}
+
+.tree-container.connection-highlighting-active svg g.recipe-node:not([data-selected]):not([data-connected]) text {
+    opacity: 0.3 !important;
+}
+
+/* Make connected nodes glow more prominently when others are hidden */
+.tree-container.connection-highlighting-active svg g.recipe-node[data-selected="true"] {
+    animation: selectedNodePulse 2s infinite;
+}
+
+.tree-container.connection-highlighting-active svg g.recipe-node[data-connected="true"] {
+    animation: connectedNodeGlow 2s infinite alternate;
+}
+
+@keyframes selectedNodePulse {
+    0%, 100% {
+        filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+    }
+}
+
+@keyframes connectedNodeGlow {
+    0% {
+        filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.4));
+    }
+    100% {
+        filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.7)) drop-shadow(0 0 16px rgba(0, 242, 254, 0.3));
+    }
+}
+
+/* Hide unconnected connection lines during highlighting */
+.tree-container.connection-highlighting-active svg path.connection-line:not([data-highlighted="true"]) {
+    opacity: 0.05 !important;
+    transition: opacity 0.3s ease;
+}
+
+.tree-container.connection-highlighting-active svg .connection-label:not([data-highlighted]) {
+    opacity: 0.1 !important;
+    transition: opacity 0.3s ease;
+}
+
+/* Connection line highlighting */
+.connection-line[data-highlighted="true"] {
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8));
+    animation: connectionPulse 2s infinite;
+}
+
+@keyframes connectionPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Add visual hint for connection highlighting */
+.tree-container::before {
+    content: '💡 Hold Shift + Click to highlight connections';
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: rgba(255, 215, 0, 0.9);
+    padding: 0.4rem 0.8rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1001;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.tree-container:hover::before {
+    opacity: 0.8;
 }
 
 /* Loading state */
 .tree-container.loading::after {
-    content: '⏳ Rendering enhanced tree view...';
+    content: '⏳ Building elegant tree view...';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -1165,6 +1364,7 @@ main {
     border-radius: 8px;
     font-size: 1.1rem;
     z-index: 1000;
+    border: 1px solid rgba(100, 255, 218, 0.3);
 }
 
 /* Responsive tree controls */

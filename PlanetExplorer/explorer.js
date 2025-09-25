@@ -158,11 +158,19 @@ class PlanetExplorer {
 
 
     updateStats() {
-        const totalSystems = this.filteredData ? this.filteredData.length : 0;
+        // Determine what data to use for stats
+        // If no filters are active, show total data stats
+        // If filters are active, show filtered data stats
+        const hasActiveFilters = this.currentSearchTerm ||
+                                 this.selectedSystems.size > 0 ||
+                                 this.selectedResources.size > 0;
+
+        const dataToCount = hasActiveFilters ? this.filteredData : this.data;
+        const totalSystems = dataToCount ? dataToCount.length : 0;
         let totalPlanets = 0;
 
-        if (this.filteredData) {
-            this.filteredData.forEach(system => {
+        if (dataToCount) {
+            dataToCount.forEach(system => {
                 if (system.planets) {
                     totalPlanets += system.planets.length;
                 }
