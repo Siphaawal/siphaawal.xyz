@@ -146,14 +146,14 @@
     </div>
 
     <!-- Load Scripts -->
-    <script src="../Utils/DOMUtils.js"></script>
-    <script src="../Utils/BaseAnalytics.js"></script>
-    <script src="../Utils/BaseExplorer.js"></script>
-    <script src="../Utils/BaseApp.js"></script>
-    <script src="../Utils/DataLoader.js"></script>
-    <script src="../Data/buildings-data.js"></script>
-    <script src="explorer.js"></script>
-    <script src="analytics.js"></script>
-    <script src="app.js"></script>
+    <script src="../Utils/DOMUtils.js" onload="console.log('✅ DOMUtils.js loaded')" onerror="console.error('❌ Failed to load DOMUtils.js')"></script>
+    <script src="../Utils/BaseAnalytics.js" onload="console.log('✅ BaseAnalytics.js loaded')" onerror="console.error('❌ Failed to load BaseAnalytics.js')"></script>
+    <script src="../Utils/BaseExplorer.js" onload="console.log('✅ BaseExplorer.js loaded')" onerror="console.error('❌ Failed to load BaseExplorer.js')"></script>
+    <script src="../Utils/BaseApp.js" onload="console.log('✅ BaseApp.js loaded')" onerror="console.error('❌ Failed to load BaseApp.js')"></script>
+    <script src="../Utils/DataLoader.js" onload="console.log('✅ DataLoader.js loaded, DataLoader available:', typeof DataLoader !== 'undefined')" onerror="console.error('❌ Failed to load DataLoader.js')"></script>
+    <script src="../Data/buildings-data.js" onload="console.log('✅ buildings-data.js loaded, rawBuildingData available:', typeof rawBuildingData !== 'undefined')" onerror="console.error('❌ Failed to load buildings-data.js')"></script>
+    <script src="explorer.js" onload="console.log('✅ explorer.js loaded')" onerror="console.error('❌ Failed to load explorer.js')"></script>
+    <script src="analytics.js" onload="console.log('✅ analytics.js loaded')" onerror="console.error('❌ Failed to load analytics.js')"></script>
+    <script src="app.js" onload="console.log('✅ app.js loaded')" onerror="console.error('❌ Failed to load app.js')"></script>
 </body>
 </html>

@@ -17,6 +17,14 @@ class ClaimStakeApp {
     async loadData() {
         try {
             console.log('🔍 Loading ClaimStake building data...');
+
+            // Check if DataLoader is available
+            if (typeof DataLoader === 'undefined') {
+                console.error('❌ DataLoader is not available! Make sure DataLoader.js is loaded before app.js');
+                throw new Error('DataLoader is not defined');
+            }
+
+            console.log('✅ DataLoader is available, proceeding with data loading...');
             this.data = await DataLoader.loadExplorerData('claimstake');
 
             if (this.data && this.data.allBuildings.length > 0) {
