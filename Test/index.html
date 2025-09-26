@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Explorer Test Suite</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-controls {
+            background: #2d2d30;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .test-button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .test-button:hover {
+            background: #1177bb;
+        }
+
+        .test-button.danger {
+            background: #d73a49;
+        }
+
+        .test-button.danger:hover {
+            background: #e85463;
+        }
+
+        .console {
+            background: #0c0c0c;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #444;
+        }
+
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .status.running {
+            background: #2d4a59;
+            border-left: 4px solid #0e639c;
+        }
+
+        .status.completed {
+            background: #1e3a1e;
+            border-left: 4px solid #28a745;
+        }
+
+        .status.failed {
+            background: #3e1e1e;
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Unified Explorer Test Suite</h1>
+        <p>Comprehensive testing for Recipe Explorer, ClaimStake Explorer, and Planet Explorer</p>
+    </div>
+
+    <div class="test-controls">
+        <h3>Test Controls</h3>
+        <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
+        <button class="test-button" onclick="runDataLoaderTests()">📦 DataLoader Tests</button>
+        <button class="test-button" onclick="runIntegrationTests()">🔗 Integration Tests</button>
+        <button class="test-button" onclick="runBaseClassTests()">⚙️ Base Class Tests</button>
+        <button class="test-button" onclick="runRecipeTests()">🍳 Recipe Tests</button>
+        <button class="test-button" onclick="runClaimStakeTests()">🏗️ ClaimStake Tests</button>
+        <button class="test-button" onclick="runPlanetTests()">🌍 Planet Tests</button>
+        <button class="test-button danger" onclick="clearConsole()">🗑️ Clear Console</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div class="console" id="console"></div>
+
+    <!-- Load Utils first -->
+    <script src="../Utils/DOMUtils.js"></script>
+    <script src="../Utils/BaseAnalytics.js"></script>
+    <script src="../Utils/BaseExplorer.js"></script>
+    <script src="../Utils/BaseApp.js"></script>
+    <script src="../Utils/DataLoader.js"></script>
+
+    <!-- Load Data from high-level directory -->
+    <script src="../Data/recipes-data.js"></script>
+    <script src="../Data/buildings-data.js"></script>
+    <script src="../Data/planet-data.js"></script>
+
+    <!-- Load RecipeExplorer dependencies (if available) -->
+    <script src="../RecipeExplorer/enhanced-tree-renderer.js"></script>
+    <script src="../RecipeExplorer/analytics.js"></script>
+    <script src="../RecipeExplorer/app.js"></script>
+
+    <!-- Load ClaimStakeExplorer dependencies (if available) -->
+    <script src="../ClaimStakeExplorer/explorer.js"></script>
+    <script src="../ClaimStakeExplorer/analytics.js"></script>
+    <script src="../ClaimStakeExplorer/app.js"></script>
+
+    <!-- Load PlanetExplorer dependencies (if available) -->
+    <script src="../PlanetExplorer/explorer.js"></script>
+    <script src="../PlanetExplorer/analytics.js"></script>
+    <script src="../PlanetExplorer/app.js"></script>
+
+    <!-- Load the unified test suite -->
+    <script src="test.js"></script>
+
+    <script>
+        // Console capture and display
+        const consoleElement = document.getElementById('console');
+        const statusElement = document.getElementById('status');
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+
+        function displayInConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '📝';
+            consoleElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+        }
+
+        // Override console methods
+        console.log = function(...args) {
+            originalConsole.log.apply(console, args);
+            displayInConsole(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalConsole.error.apply(console, args);
+            displayInConsole(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalConsole.warn.apply(console, args);
+            displayInConsole(args.join(' '), 'warn');
+        };
+
+        function clearConsole() {
+            consoleElement.textContent = '';
+            statusElement.textContent = '';
+            statusElement.className = 'status';
+        }
+
+        function setStatus(message, type = 'running') {
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Override test runner methods to update status
+        const originalRunAllTests = window.runAllTests;
+
+        window.runAllTests = async function() {
+            setStatus('🚀 Running all test suites...', 'running');
+            try {
+                await originalRunAllTests();
+                setStatus('✅ All test suites completed', 'completed');
+            } catch (error) {
+                setStatus('❌ Test execution failed', 'failed');
+                console.error('Test execution error:', error);
+            }
+        };
+
+        // Add individual test status updates
+        ['runDataLoaderTests', 'runIntegrationTests', 'runBaseClassTests', 'runRecipeTests', 'runClaimStakeTests', 'runPlanetTests'].forEach(testName => {
+            const original = window[testName];
+            if (original) {
+                window[testName] = async function() {
+                    const testType = testName.replace('run', '').replace('Tests', '');
+                    setStatus(`🧪 Running ${testType} tests...`, 'running');
+                    try {
+                        await original();
+                        setStatus(`✅ ${testType} tests completed`, 'completed');
+                    } catch (error) {
+                        setStatus(`❌ ${testType} tests failed`, 'failed');
+                        console.error(`${testType} test error:`, error);
+                    }
+                };
+            }
+        });
+
+        // Initial setup message
+        window.addEventListener('load', () => {
+            console.log('🔧 Unified Test Suite loaded successfully');
+            console.log('📊 Available test suites: DataLoader, Integration, Base Classes, Recipe Explorer, ClaimStake Explorer, Planet Explorer');
+            console.log('🎯 Click "Run All Tests" to execute the complete test suite');
+            console.log('=' .repeat(80));
+        });
+    </script>
+</body>
+</html>

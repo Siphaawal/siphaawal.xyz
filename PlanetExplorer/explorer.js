@@ -1,18 +1,16 @@
-class PlanetExplorer {
+class PlanetExplorer extends BaseExplorer {
     constructor(data) {
-        this.data = data;
-        this.filteredData = []; // Start with empty list
+        super(data);
+
+        // Initialize properties after calling super
         this.allResources = new Set();
-        this.currentSearchTerm = '';
-        this.selectedSystems = new Set();
-        this.selectedResources = new Set();
-        this.extractAllResources();
-        this.populateCheckboxes();
-        this.renderSystems(); // Show empty state initially
-        this.updateStats();
+
+        // Now initialize properly
+        this.initialize();
     }
 
-    extractAllResources() {
+    extractMetadata() {
+        this.allResources.clear();
         this.data.forEach(system => {
             if (system.planets) {
                 system.planets.forEach(planet => {
@@ -26,144 +24,79 @@ class PlanetExplorer {
         });
     }
 
-    populateCheckboxes() {
+    populateFilters() {
         this.populateSystemCheckboxes();
         this.populateResourceCheckboxes();
     }
 
     populateSystemCheckboxes() {
-        const container = document.getElementById('systemCheckboxes');
-        const sortedSystems = this.data.sort((a, b) => a.name.localeCompare(b.name));
-
-        sortedSystems.forEach(system => {
-            const checkboxItem = document.createElement('div');
-            checkboxItem.className = 'checkbox-item';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `system-${system.key}`;
-            checkbox.value = system.key;
-            checkbox.addEventListener('change', () => this.handleSystemFilter());
-
-            const label = document.createElement('label');
-            label.htmlFor = `system-${system.key}`;
-            label.textContent = system.name;
-
-            checkboxItem.appendChild(checkbox);
-            checkboxItem.appendChild(label);
-            container.appendChild(checkboxItem);
+        const sortedSystems = [...this.data].sort((a, b) => a.name.localeCompare(b.name));
+        this.createCheckboxFilter('systemCheckboxes', sortedSystems.map(s => s.key), 'system', (key) => {
+            const system = this.data.find(s => s.key === key);
+            return system ? system.name : key;
         });
     }
 
     populateResourceCheckboxes() {
-        const container = document.getElementById('resourceCheckboxes');
-        const sortedResources = Array.from(this.allResources).sort();
-
-        sortedResources.forEach(resource => {
-            const checkboxItem = document.createElement('div');
-            checkboxItem.className = 'checkbox-item';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `resource-${resource}`;
-            checkbox.value = resource;
-            checkbox.addEventListener('change', () => this.handleResourceFilter());
-
-            const label = document.createElement('label');
-            label.htmlFor = `resource-${resource}`;
-            label.textContent = resource;
-
-            checkboxItem.appendChild(checkbox);
-            checkboxItem.appendChild(label);
-            container.appendChild(checkboxItem);
-        });
+        this.createCheckboxFilter('resourceCheckboxes', this.allResources, 'resource');
     }
 
-    handleSearch(searchTerm) {
-        const term = searchTerm.toLowerCase();
-        this.currentSearchTerm = term;
-        this.applyFilters();
-    }
-
-    handleSystemFilter() {
-        // Get selected systems
-        this.selectedSystems.clear();
-        document.querySelectorAll('#systemCheckboxes input[type="checkbox"]:checked').forEach(checkbox => {
-            this.selectedSystems.add(checkbox.value);
-        });
-        this.applyFilters();
-    }
-
-    handleResourceFilter() {
-        // Get selected resources
-        this.selectedResources.clear();
-        document.querySelectorAll('#resourceCheckboxes input[type="checkbox"]:checked').forEach(checkbox => {
-            this.selectedResources.add(checkbox.value);
-        });
-        this.applyFilters();
-    }
 
     applyFilters() {
-        // Check if any filters are active
         const hasActiveFilters = this.currentSearchTerm ||
-                                 this.selectedSystems.size > 0 ||
-                                 this.selectedResources.size > 0;
+                                 this.selectedFilters.get('system')?.size > 0 ||
+                                 this.selectedFilters.get('resource')?.size > 0;
+
+        console.log(`🔍 PlanetExplorer applyFilters:`, {
+            searchTerm: this.currentSearchTerm,
+            systemFilters: this.selectedFilters.get('system')?.size || 0,
+            resourceFilters: this.selectedFilters.get('resource')?.size || 0,
+            hasActiveFilters
+        });
 
         if (!hasActiveFilters) {
-            // No filters active, show empty list
             this.filteredData = [];
+            console.log(`📭 No filters active, showing empty state`);
         } else {
-            // Apply filters only when there are active filters
-            this.filteredData = this.data.filter(system => {
-                // System selection filter
-                if (this.selectedSystems.size > 0 && !this.selectedSystems.has(system.key)) {
-                    return false;
-                }
-
-                // Resource filter - system must have selected resources
-                if (this.selectedResources.size > 0) {
-                    const hasSelectedResource = system.planets && system.planets.some(planet =>
-                        planet.resources && planet.resources.some(resource =>
-                            this.selectedResources.has(resource.name)
-                        )
-                    );
-                    if (!hasSelectedResource) {
-                        return false;
-                    }
-                }
-
-                // Search term filter
-                if (this.currentSearchTerm) {
-                    const systemMatch = system.name.toLowerCase().includes(this.currentSearchTerm);
-                    const planetMatch = system.planets && system.planets.some(planet =>
-                        planet.name.toLowerCase().includes(this.currentSearchTerm)
-                    );
-                    const resourceMatch = system.planets && system.planets.some(planet =>
-                        planet.resources && planet.resources.some(resource =>
-                            resource.name.toLowerCase().includes(this.currentSearchTerm)
-                        )
-                    );
-                    if (!(systemMatch || planetMatch || resourceMatch)) {
-                        return false;
-                    }
-                }
-
-                return true;
-            });
+            super.applyFilters();
+            console.log(`📋 Applied filters, got ${this.filteredData.length} results`);
         }
 
         this.renderSystems();
         this.updateStats();
     }
 
+    matchesSearch(system, searchTerm) {
+        const systemMatch = system.name.toLowerCase().includes(searchTerm);
+        const planetMatch = system.planets && system.planets.some(planet =>
+            planet.name.toLowerCase().includes(searchTerm)
+        );
+        const resourceMatch = system.planets && system.planets.some(planet =>
+            planet.resources && planet.resources.some(resource =>
+                resource.name.toLowerCase().includes(searchTerm)
+            )
+        );
+        return systemMatch || planetMatch || resourceMatch;
+    }
+
+    matchesFilter(system, filterType, selectedItems) {
+        if (filterType === 'system') {
+            return selectedItems.has(system.key);
+        } else if (filterType === 'resource') {
+            return system.planets && system.planets.some(planet =>
+                planet.resources && planet.resources.some(resource =>
+                    selectedItems.has(resource.name)
+                )
+            );
+        }
+        return true;
+    }
+
 
     updateStats() {
-        // Determine what data to use for stats
-        // If no filters are active, show total data stats
-        // If filters are active, show filtered data stats
         const hasActiveFilters = this.currentSearchTerm ||
-                                 this.selectedSystems.size > 0 ||
-                                 this.selectedResources.size > 0;
+                                 this.selectedFilters.get('system')?.size > 0 ||
+                                 this.selectedFilters.get('resource')?.size > 0;
 
         const dataToCount = hasActiveFilters ? this.filteredData : this.data;
         const totalSystems = dataToCount ? dataToCount.length : 0;
@@ -182,14 +115,31 @@ class PlanetExplorer {
         document.getElementById('uniqueResources').textContent = this.allResources.size;
     }
 
+    renderItems() {
+        this.renderSystems();
+    }
+
+    getModalId() {
+        return 'planetModal';
+    }
+
+    populateModal(system) {
+        this.showSystemModal(system);
+    }
+
     renderSystems() {
         const grid = document.getElementById('systemsGrid');
         grid.innerHTML = '';
 
-        // Check if no filters are active
+        // Check if no filters are active - use the same logic as applyFilters()
         const hasActiveFilters = this.currentSearchTerm ||
-                                 this.selectedSystems.size > 0 ||
-                                 this.selectedResources.size > 0;
+                                 this.selectedFilters.get('system')?.size > 0 ||
+                                 this.selectedFilters.get('resource')?.size > 0;
+
+        console.log(`🎨 PlanetExplorer renderSystems:`, {
+            hasActiveFilters,
+            filteredDataLength: this.filteredData.length
+        });
 
         if (!hasActiveFilters) {
             // Show placeholder message when no filters are active
@@ -282,10 +232,15 @@ class PlanetExplorer {
                 );
             }
 
-            if (this.selectedResources.size > 0) {
+            // Use the new BaseExplorer filter system
+            const selectedResources = this.selectedFilters.get('resource');
+            if (selectedResources && selectedResources.size > 0) {
+                const originalCount = filteredResources.length;
                 filteredResources = filteredResources.filter(resource =>
-                    this.selectedResources.has(resource.name)
+                    selectedResources.has(resource.name)
                 );
+                console.log(`🎯 Planet ${planet.name}: ${originalCount} → ${filteredResources.length} resources after filtering:`,
+                    filteredResources.map(r => r.name));
             }
 
             // Show filtered resources with richness information
@@ -299,7 +254,7 @@ class PlanetExplorer {
 
             // Show resource count based on what filters are active
             let resourceCountText = resources.length.toString();
-            if (this.currentSearchTerm || this.selectedResources.size > 0) {
+            if (this.currentSearchTerm || (selectedResources && selectedResources.size > 0)) {
                 resourceCountText = `${filteredResources.length}/${resources.length}`;
             }
 

@@ -7,26 +7,27 @@ class ClaimStakeApp {
         this.init();
     }
 
-    init() {
-        this.loadData();
+    async init() {
+        await this.loadData();
         this.initializeModules();
         this.setupEventListeners();
         this.updateInitialView();
     }
 
-    loadData() {
+    async loadData() {
         try {
             console.log('🔍 Loading ClaimStake building data...');
-            this.data = loadBuildingData();
+            this.data = await DataLoader.loadExplorerData('claimstake');
 
             if (this.data && this.data.allBuildings.length > 0) {
-                console.log(`✅ Loaded ${this.data.allBuildings.length} buildings successfully`);
+                console.log(`✅ Loaded ${this.data.allBuildings.length} buildings using DataLoader`);
                 console.log(`📊 Found ${this.data.categories.length} categories`);
             } else {
                 console.error('❌ No building data loaded');
             }
         } catch (error) {
             console.error('💥 Error loading data:', error);
+            this.data = { allBuildings: [], categories: [], metadata: { tiers: [], resources: [], constructionMaterials: [], buildingTypes: [] } };
         }
     }
 

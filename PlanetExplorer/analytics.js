@@ -1,11 +1,10 @@
-class ResourceAnalytics {
+class ResourceAnalytics extends BaseAnalytics {
     constructor(data) {
-        this.data = data;
+        super(data);
         this.resourceAnalytics = null;
-        this.generateResourceAnalytics();
     }
 
-    generateResourceAnalytics() {
+    generateAnalytics() {
         const resourceCounts = new Map();
         const resourceRichness = new Map();
         const systemResourceCounts = new Map();
@@ -119,13 +118,21 @@ class ResourceAnalytics {
         };
     }
 
-    renderAnalytics() {
+    updateStats() {
         const analytics = this.resourceAnalytics;
+        if (!analytics) return;
 
-        // Update analytics stats
         document.getElementById('scarcestCount').textContent = analytics.scarcestResources.length;
         document.getElementById('averageRichness').textContent = analytics.averageRichness;
         document.getElementById('topSystemsCount').textContent = analytics.topLocations.length;
+    }
+
+    renderAnalytics() {
+        this.generateAnalytics();
+        super.renderAnalytics();
+
+        const analytics = this.resourceAnalytics;
+        if (!analytics) return;
 
         // Render scarcest resources
         const scarcestContainer = document.getElementById('scarcestResources');

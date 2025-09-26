@@ -9,9 +9,10 @@ class RecipeExplorerApp {
         this.init();
     }
 
-    init() {
+    async init() {
         console.log('🚀 Initializing Recipe Explorer App...');
 
+        await this.loadData();
         this.extractAllRecipes();
 
         try {
@@ -33,17 +34,28 @@ class RecipeExplorerApp {
         console.log('✅ Recipe Explorer App initialization complete');
     }
 
+    async loadData() {
+        try {
+            console.log('📦 Loading Recipe Explorer data...');
+            this.recipeData = await DataLoader.loadExplorerData('recipe');
+            console.log(`✅ Loaded ${this.recipeData.categories.length} recipe categories using DataLoader`);
+        } catch (error) {
+            console.error('💥 Error loading recipe data:', error);
+            this.recipeData = { categories: [] };
+        }
+    }
+
     extractAllRecipes() {
         this.allRecipes = [];
 
-        if (!recipeData || !recipeData.categories) {
+        if (!this.recipeData || !this.recipeData.categories) {
             console.error('❌ No recipe data available');
             return;
         }
 
-        console.log('📊 Extracting recipes from', recipeData.categories.length, 'categories');
+        console.log('📊 Extracting recipes from', this.recipeData.categories.length, 'categories');
 
-        recipeData.categories.forEach((category, categoryIndex) => {
+        this.recipeData.categories.forEach((category, categoryIndex) => {
             category.recipes.forEach((recipe, recipeIndex) => {
                 this.allRecipes.push({
                     ...recipe,
@@ -94,8 +106,8 @@ class RecipeExplorerApp {
     }
 
     initializeAnalytics() {
-        if (typeof RecipeAnalytics !== 'undefined' && recipeData) {
-            this.analytics = new RecipeAnalytics(recipeData);
+        if (typeof RecipeAnalytics !== 'undefined' && this.recipeData) {
+            this.analytics = new RecipeAnalytics(this.recipeData);
         } else {
             console.warn('⚠️ RecipeAnalytics or recipeData not available');
         }
@@ -110,7 +122,7 @@ class RecipeExplorerApp {
 
         container.innerHTML = '';
 
-        if (!recipeData || !recipeData.categories) {
+        if (!this.recipeData || !this.recipeData.categories) {
             console.error('❌ Recipe data not available for populating checkboxes');
             container.innerHTML = `
                 <div class="error-message">
@@ -121,10 +133,10 @@ class RecipeExplorerApp {
             return;
         }
 
-        console.log('📦 Populating recipe checkboxes with', recipeData.categories.length, 'categories');
+        console.log('📦 Populating recipe checkboxes with', this.recipeData.categories.length, 'categories');
 
         // Create expandable categories
-        recipeData.categories.forEach((category, categoryIndex) => {
+        this.recipeData.categories.forEach((category, categoryIndex) => {
             // Filter recipes for this category based on current filters
             const categoryRecipes = category.recipes.filter(recipe =>
                 this.filteredRecipes.some(filtered => filtered.id === recipe.id)
