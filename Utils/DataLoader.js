@@ -17,12 +17,40 @@ class DataLoader {
                     return await this.loadClaimStakeData(basePath);
                 case 'planet':
                     return await this.loadPlanetData(basePath);
+                case 'resources':
+                    return await this.loadResourcesData();
                 default:
                     throw new Error(`Unknown explorer type: ${explorerType}`);
             }
         } catch (error) {
             console.error(`❌ Error loading ${explorerType} data:`, error);
             return this.getEmptyDataStructure(explorerType);
+        }
+    }
+
+    /**
+     * Load resources data
+     */
+    static async loadResourcesData() {
+        try {
+            console.log('📦 Loading resources data...');
+            // Try to get data from global variable first (for backward compatibility)
+            if (typeof window.resourcesData !== 'undefined' && window.resourcesData?.resources) {
+                console.log('✅ Using resources data from global variable');
+                return window.resourcesData;
+            }
+
+            // Fallback to loading from JSON file
+            const response = await fetch('../JSON/resources.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('✅ Loaded resources data from JSON file');
+            return data;
+        } catch (error) {
+            console.warn('⚠️ Could not load resources data:', error);
+            throw error;
         }
     }
 
@@ -308,6 +336,8 @@ class DataLoader {
                 };
             case 'planet':
                 return { mapData: [], totalSystems: 0 };
+            case 'resources':
+                return { resources: [] };
             default:
                 return {};
         }

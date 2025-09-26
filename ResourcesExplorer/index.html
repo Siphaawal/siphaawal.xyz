@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>⚒️ Resources Explorer</h1>
+
+        <nav class="navigation-tabs">
+            <button class="nav-tab active" data-tab="explorer">🗂️ Explorer</button>
+            <button class="nav-tab" data-tab="analytics">📊 Analytics</button>
+        </nav>
+
+        <nav class="breadcrumb">
+            <a href="../index.html">Home</a> > Resources Explorer
+        </nav>
+    </header>
+
+    <main>
+        <!-- Explorer Tab Content -->
+        <div id="explorerTab" class="tab-content active">
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalResources">0</span>
+                    <span class="stat-label">Total Resources</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="filteredResources">0</span>
+                    <span class="stat-label">Filtered Results</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="uniqueCategories">0</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="averageValue">0</span>
+                    <span class="stat-label">Average Value</span>
+                </div>
+            </div>
+
+            <div class="explorer-layout">
+                <div class="filters-sidebar">
+                    <h3>🔍 Filters</h3>
+                    <div class="search-container" id="explorerControls">
+                        <input type="text" id="searchInput" placeholder="Search resources...">
+                    </div>
+
+                    <div class="filter-section">
+                        <h4>📦 Categories</h4>
+                        <div class="checkbox-container" id="categoryCheckboxes">
+                            <!-- Category checkboxes will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4>⭐ Tiers</h4>
+                        <div class="checkbox-container" id="tierCheckboxes">
+                            <!-- Tier checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resources-main">
+                    <div class="resources-grid" id="resourcesGrid">
+                        <!-- Resources will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab Content -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-header">
+                <h2>📊 Resource Analytics</h2>
+                <p>Analyze resource distribution, values, and categories</p>
+            </div>
+
+            <div class="analytics-stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="mostExpensiveValue">0</span>
+                    <span class="stat-label">Highest Base Value</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="averageTier">0</span>
+                    <span class="stat-label">Average Tier</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalValue">0</span>
+                    <span class="stat-label">Total Collection Value</span>
+                </div>
+            </div>
+
+            <div class="analytics-sections">
+                <div class="analytics-section">
+                    <h3>💰 Most Valuable Resources</h3>
+                    <p class="section-note">Resources ranked by base value</p>
+                    <div id="mostValuableResources" class="resource-analysis-grid">
+                        <!-- Most valuable resources will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>📊 Category Distribution</h3>
+                    <p class="section-note">Resource breakdown by category and tier</p>
+                    <div id="categoryDistribution" class="category-analysis-grid">
+                        <!-- Category distribution will be populated here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>⚖️ Stack Size Analysis</h3>
+                    <p class="section-note">Resources grouped by stack sizes for inventory optimization</p>
+                    <div id="stackSizeAnalysis" class="stack-analysis-grid">
+                        <!-- Stack size analysis will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="resourceModal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <div id="modalContent">
+                <!-- Resource details will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../Utils/DOMUtils.js"></script>
+    <script src="../Utils/BaseAnalytics.js"></script>
+    <script src="../Utils/BaseExplorer.js"></script>
+    <script src="../Utils/BaseApp.js"></script>
+    <script src="../Utils/DataLoader.js"></script>
+    <script src="../Data/resources-data.js"></script>
+    <script src="explorer.js"></script>
+    <script src="analytics.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

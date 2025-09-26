@@ -21,7 +21,8 @@ const DATA_DIR = '../Data';
 const FILE_MAPPINGS = [
     ['recipes.json', 'recipes-data.js', 'rawRecipeData'],
     ['buildings.json', 'buildings-data.js', 'rawBuildingData'],
-    ['planets.json', 'planet-data.js', 'planetData']
+    ['planets.json', 'planet-data.js', 'planetData'],
+    ['resources.json', 'resources-data.js', 'resourcesData']
 ];
 
 /**

@@ -1,0 +1,322 @@
+class ResourcesExplorer extends BaseExplorer {
+    constructor(data) {
+        super(data);
+
+        // Initialize properties after calling super
+        this.allCategories = new Set();
+        this.allTiers = new Set();
+
+        // Now initialize properly
+        this.initialize();
+    }
+
+    extractMetadata() {
+        this.allCategories.clear();
+        this.allTiers.clear();
+
+        this.data.forEach(resource => {
+            if (resource.category) {
+                this.allCategories.add(resource.category);
+            }
+            if (resource.tier) {
+                this.allTiers.add(resource.tier);
+            }
+        });
+
+        console.log(`📊 Extracted metadata:`, {
+            categories: Array.from(this.allCategories),
+            tiers: Array.from(this.allTiers)
+        });
+    }
+
+    populateFilters() {
+        this.populateCategoryCheckboxes();
+        this.populateTierCheckboxes();
+    }
+
+    populateCategoryCheckboxes() {
+        const sortedCategories = Array.from(this.allCategories).sort();
+        this.createCheckboxFilter('categoryCheckboxes', sortedCategories, 'category', (category) => {
+            return category.charAt(0).toUpperCase() + category.slice(1);
+        });
+    }
+
+    populateTierCheckboxes() {
+        const sortedTiers = Array.from(this.allTiers).sort((a, b) => a - b);
+        this.createCheckboxFilter('tierCheckboxes', sortedTiers, 'tier', (tier) => {
+            return `Tier ${tier}`;
+        });
+    }
+
+    applyFilters() {
+        const hasActiveFilters = this.currentSearchTerm ||
+                                 this.selectedFilters.get('category')?.size > 0 ||
+                                 this.selectedFilters.get('tier')?.size > 0;
+
+        console.log(`🔍 ResourcesExplorer applyFilters:`, {
+            searchTerm: this.currentSearchTerm,
+            categoryFilters: this.selectedFilters.get('category')?.size || 0,
+            tierFilters: this.selectedFilters.get('tier')?.size || 0,
+            hasActiveFilters
+        });
+
+        if (!hasActiveFilters) {
+            this.filteredData = [...this.data];
+        } else {
+            super.applyFilters();
+        }
+
+        this.renderItems();
+        this.updateStats();
+    }
+
+    matchesSearch(resource, searchTerm) {
+        const nameMatch = resource.name.toLowerCase().includes(searchTerm);
+        const descMatch = resource.description && resource.description.toLowerCase().includes(searchTerm);
+        const idMatch = resource.id && resource.id.toLowerCase().includes(searchTerm);
+        const categoryMatch = resource.category && resource.category.toLowerCase().includes(searchTerm);
+
+        return nameMatch || descMatch || idMatch || categoryMatch;
+    }
+
+    matchesFilter(resource, filterType, selectedItems) {
+        if (filterType === 'category') {
+            return selectedItems.has(resource.category);
+        } else if (filterType === 'tier') {
+            return selectedItems.has(resource.tier);
+        }
+        return true;
+    }
+
+    renderItems() {
+        const container = document.getElementById('resourcesGrid');
+        if (!container) {
+            console.error('❌ Resources grid container not found');
+            return;
+        }
+
+        container.innerHTML = '';
+
+        if (this.filteredData.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>🔍 No resources found</h3>
+                    <p>Try adjusting your search or filters</p>
+                </div>
+            `;
+            return;
+        }
+
+        console.log(`🎨 Rendering ${this.filteredData.length} resources`);
+
+        this.filteredData.forEach(resource => {
+            const card = this.createResourceCard(resource);
+            container.appendChild(card);
+        });
+    }
+
+    createResourceCard(resource) {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.onclick = () => this.showModal(resource);
+
+        const tierBadge = resource.tier ? `<span class="item-tier">Tier ${resource.tier}</span>` : '';
+        const category = resource.category || 'unknown';
+
+        card.innerHTML = `
+            <div class="item-header">
+                <h3>${resource.name || 'Unknown Resource'}</h3>
+                ${tierBadge}
+            </div>
+            <div class="item-category">${category.charAt(0).toUpperCase() + category.slice(1)}</div>
+            <div class="item-details">
+                <div class="detail-item">
+                    <span class="detail-label">Base Value:</span>
+                    <span class="detail-value value-highlight">${resource.baseValue || 0}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Stack Size:</span>
+                    <span class="detail-value">${resource.stackSize || 0}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">ID:</span>
+                    <span class="detail-value">${resource.id || 'N/A'}</span>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    updateStats() {
+        const totalResources = this.data.length;
+        const filteredCount = this.filteredData.length;
+        const uniqueCategories = this.allCategories.size;
+
+        const averageValue = this.filteredData.length > 0
+            ? Math.round(this.filteredData.reduce((sum, resource) => sum + (resource.baseValue || 0), 0) / this.filteredData.length)
+            : 0;
+
+        console.log(`📊 Updating stats:`, {
+            totalResources,
+            filteredCount,
+            uniqueCategories,
+            averageValue
+        });
+
+        this.updateStatElement('totalResources', totalResources);
+        this.updateStatElement('filteredResources', filteredCount);
+        this.updateStatElement('uniqueCategories', uniqueCategories);
+        this.updateStatElement('averageValue', averageValue);
+    }
+
+    updateStatElement(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = value.toLocaleString();
+        } else {
+            console.warn(`⚠️ Stat element not found: ${elementId}`);
+        }
+    }
+
+    populateModal(resource) {
+        const modalContent = document.getElementById('modalContent');
+        if (!modalContent) {
+            console.error('❌ Modal content not found');
+            return;
+        }
+
+        const tierInfo = resource.tier ? `<span class="item-tier">Tier ${resource.tier}</span>` : '';
+        const category = resource.category || 'unknown';
+
+        modalContent.innerHTML = `
+            <div class="modal-header">
+                <h2>${resource.name || 'Unknown Resource'} ${tierInfo}</h2>
+                <div class="item-category">${category.charAt(0).toUpperCase() + category.slice(1)}</div>
+            </div>
+
+            <div class="modal-body">
+                <div class="resource-info-grid">
+                    <div class="info-section">
+                        <h3>📝 Basic Information</h3>
+                        <div class="info-item">
+                            <span class="info-label">Resource ID:</span>
+                            <span class="info-value">${resource.id || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Category:</span>
+                            <span class="info-value">${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tier:</span>
+                            <span class="info-value">${resource.tier || 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>💰 Economic Data</h3>
+                        <div class="info-item">
+                            <span class="info-label">Base Value:</span>
+                            <span class="info-value value-highlight">${resource.baseValue || 0}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Stack Size:</span>
+                            <span class="info-value">${resource.stackSize || 0}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Value per Stack:</span>
+                            <span class="info-value value-highlight">${((resource.baseValue || 0) * (resource.stackSize || 0)).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${resource.description ? `
+                    <div class="info-section">
+                        <h3>📋 Description</h3>
+                        <p class="resource-description">${resource.description}</p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Add modal-specific styles if not already present
+        if (!document.querySelector('#modalStyles')) {
+            const style = document.createElement('style');
+            style.id = 'modalStyles';
+            style.textContent = `
+                .modal-header {
+                    margin-bottom: 1.5rem;
+                    text-align: center;
+                }
+
+                .modal-header h2 {
+                    color: #4facfe;
+                    margin-bottom: 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                }
+
+                .resource-info-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                    margin-bottom: 1.5rem;
+                }
+
+                .info-section {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 8px;
+                    padding: 1rem;
+                }
+
+                .info-section h3 {
+                    color: #4facfe;
+                    margin-bottom: 1rem;
+                    font-size: 1rem;
+                }
+
+                .info-item {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 0.5rem;
+                    padding: 0.25rem 0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }
+
+                .info-item:last-child {
+                    border-bottom: none;
+                }
+
+                .info-label {
+                    color: rgba(255, 255, 255, 0.7);
+                    font-size: 0.9rem;
+                }
+
+                .info-value {
+                    color: white;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                }
+
+                .resource-description {
+                    color: rgba(255, 255, 255, 0.8);
+                    line-height: 1.5;
+                    font-style: italic;
+                }
+
+                @media (max-width: 768px) {
+                    .resource-info-grid {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    getModalId() {
+        return 'resourceModal';
+    }
+}
