@@ -1,5 +1,6 @@
 class ClaimStakeApp {
     constructor() {
+        console.log('🚀 ClaimStakeApp constructor - VERSION: 2025-09-25-21:42 - WITH DATALOADER');
         this.data = null;
         this.buildingExplorer = null;
         this.buildingAnalytics = null;
