@@ -1,4 +1,4 @@
-// Enhanced 3D star map - double-click only, no single-click movement - v2025-09-26d
+// Enhanced 3D star map - fixed CSS selector production bug - v2025-09-26e
 // Loads data from window.planetData or JSON/planets.json and renders systems as spheres.
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
@@ -1043,7 +1043,7 @@ window.initPlanetMap = async function(){
 // Auto-initialize if we're on the main page and container exists
 (async function(){
     const container = document.getElementById('planetMap');
-    if (container && !container.closest('#3dviewerTab')) {
+    if (container && !container.closest('[id="3dviewerTab"]')) {
         // Only auto-initialize if not in a tab
         await window.initPlanetMap();
     }
