@@ -43,7 +43,7 @@ class ClaimStakeApp {
 
     initializeModules() {
         // Check if required DOM elements exist before initializing
-        const requiredElements = ['tierFilters', 'typeFilters', 'buildingsContainer'];
+        const requiredElements = ['tierFilters', 'buildingsContainer'];
         const missingElements = requiredElements.filter(id => !document.getElementById(id));
 
         if (missingElements.length > 0) {

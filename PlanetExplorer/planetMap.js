@@ -7,6 +7,15 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/exampl
 let originalSystemVisibility = [];
 let selectedSystemData = null;
 
+// Global variables for connection view
+let isConnectionView = false;
+let connectionLines = [];
+let connectedSystemMeshes = [];
+let originalMaterials = new Map();
+
+// Global variables for camera centering
+let lastClickedSystemData = null;
+
 // Global function to initialize the 3D map
 window.initPlanetMap = async function(){
     // Utility to fetch planet data
@@ -123,11 +132,23 @@ window.initPlanetMap = async function(){
     // Allow zooming in extremely close to inspect a system
     controls.minDistance = 0.001;
     controls.maxDistance = 500;
-    // Improve responsiveness
+    // Improve responsiveness with adaptive speeds
     controls.enablePan = true;
     controls.panSpeed = 1.0;
     controls.rotateSpeed = 1.0;
     controls.zoomSpeed = 1.2;
+
+    // Adaptive control sensitivity based on camera distance
+    function updateControlSensitivity() {
+        const distance = camera.position.distanceTo(controls.target);
+        // Scale pan and rotate speeds based on distance - closer = faster response
+        const scaleFactor = Math.max(0.1, Math.min(2.0, distance / 10));
+        controls.panSpeed = 2.0 / scaleFactor;
+        controls.rotateSpeed = 1.5 / scaleFactor;
+    }
+
+    // Update sensitivity on zoom changes
+    controls.addEventListener('change', updateControlSensitivity);
 
     // Create animated starfield background
     function createStarfield() {
@@ -441,7 +462,39 @@ window.initPlanetMap = async function(){
         renderer.domElement.style.cursor = 'grab';
     });
 
-    // Double-click only handling - no single click camera movement
+    // Single-click handler for connection view
+    let clickTimer = null;
+    function handleSingleClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = - ((event.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+        const intersects = raycaster.intersectObjects(systemMeshes);
+
+        if (intersects.length > 0) {
+            const obj = intersects[0].object;
+            const sysObj = systemContainers.find(sc => sc.starMesh === obj);
+            if (sysObj) {
+                console.log('Single-clicked system:', sysObj.starMesh.userData.system.name);
+
+                // Store last clicked system data for centering
+                lastClickedSystemData = {
+                    sysObj: sysObj,
+                    system: sysObj.starMesh.userData.system
+                };
+
+                // Show the center button
+                showCenterButton();
+
+                showConnectedSystems(sysObj);
+            }
+        }
+    }
+
+    // Double-click handler for system details
     function handleDoubleClick(event) {
         event.preventDefault();
         event.stopPropagation();
@@ -459,6 +512,15 @@ window.initPlanetMap = async function(){
                 console.log('Double-clicked system:', sysObj.starMesh.userData.system.name);
                 console.log('System has', sysObj.planetMeshes.length, 'planets');
 
+                // Store last clicked system data for centering
+                lastClickedSystemData = {
+                    sysObj: sysObj,
+                    system: sysObj.starMesh.userData.system
+                };
+
+                // Show the center button
+                showCenterButton();
+
                 // Hide all other systems and center this one
                 isolateSystem(sysObj);
 
@@ -468,8 +530,19 @@ window.initPlanetMap = async function(){
         }
     }
 
-    // Only listen for double-click events - no single click camera movement
-    renderer.domElement.addEventListener('dblclick', handleDoubleClick);
+    // Click handling with delay to distinguish single vs double click
+    renderer.domElement.addEventListener('click', (event) => {
+        if (clickTimer) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
+            handleDoubleClick(event);
+        } else {
+            clickTimer = setTimeout(() => {
+                clickTimer = null;
+                handleSingleClick(event);
+            }, 250);
+        }
+    });
 
     // Smooth top-down zoom: move camera above the system and look straight down
     function smoothZoomToTopDown(targetPos, sysObj, duration) {
@@ -676,6 +749,35 @@ window.initPlanetMap = async function(){
             starfield.geometry.attributes.size.needsUpdate = true;
         }
 
+        // Animate wormhole connections
+        if (isConnectionView && connectionLines.length > 0) {
+            connectionLines.forEach(line => {
+                if (line.userData.isWormhole) {
+                    // Animate wormhole opacity pulsing
+                    const phase = t * 2 + line.userData.animationPhase;
+                    const pulse = Math.sin(phase) * 0.3 + 0.7;
+                    line.material.opacity = line.userData.originalOpacity * pulse;
+
+                    // Animate color shifting
+                    const hue = (t * 0.5 + line.userData.animationPhase) % 1;
+                    line.material.color.setHSL(hue, 0.8, 0.6);
+                } else if (line.userData.isWormholeParticles) {
+                    // Animate particle movement and opacity
+                    const phase = t * 1.5 + line.userData.animationPhase;
+                    const pulse = Math.sin(phase) * 0.4 + 0.6;
+                    line.material.opacity = 0.7 * pulse;
+
+                    // Subtle particle position animation
+                    const positions = line.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        const offset = Math.sin(phase + i * 0.1) * 0.02;
+                        positions[i + 1] += offset;
+                    }
+                    line.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+        }
+
         // animate planets orbiting their stars, rotating, and star pulsing
         systemContainers.forEach(sysObj => {
             // Animate planet orbits and rotation
@@ -835,9 +937,203 @@ window.initPlanetMap = async function(){
         selectedSystemData = targetSysObj.starMesh.userData.system;
     }
 
+    // Function to show connected systems
+    function showConnectedSystems(centerSysObj) {
+        console.log('Showing connected systems for:', centerSysObj.starMesh.userData.system.name);
+
+        // Clear any existing connection view
+        clearConnectionView();
+
+        const centerSystem = centerSysObj.starMesh.userData.system;
+        const centerPos = new THREE.Vector3();
+        centerSysObj.starMesh.getWorldPosition(centerPos);
+
+        if (!centerSystem.links || centerSystem.links.length === 0) {
+            console.log('No connected systems found');
+            return;
+        }
+
+        console.log('Found', centerSystem.links.length, 'connected systems:', centerSystem.links);
+
+        isConnectionView = true;
+        connectedSystemMeshes = [centerSysObj.starMesh];
+
+        // Find connected system objects
+        const connectedSysObjs = [];
+        centerSystem.links.forEach(linkName => {
+            const connectedSysObj = systemContainers.find(sc =>
+                sc.starMesh.userData.system.name === linkName ||
+                sc.starMesh.userData.system.key === linkName ||
+                sc.starMesh.userData.system.id === linkName
+            );
+            if (connectedSysObj) {
+                connectedSysObjs.push(connectedSysObj);
+                connectedSystemMeshes.push(connectedSysObj.starMesh);
+            }
+        });
+
+        console.log('Found', connectedSysObjs.length, 'connected system objects');
+
+        // Hide all systems except connected ones
+        systemContainers.forEach(sysObj => {
+            const isConnected = sysObj === centerSysObj || connectedSysObjs.includes(sysObj);
+            sysObj.containerGroup.visible = isConnected;
+
+            if (isConnected) {
+                // Store original material and apply glow effect
+                const starMesh = sysObj.starMesh;
+                if (!originalMaterials.has(starMesh)) {
+                    originalMaterials.set(starMesh, starMesh.material.clone());
+                }
+
+                // Create glowing material
+                const glowMaterial = starMesh.material.clone();
+                glowMaterial.emissive.multiplyScalar(3.0);
+                starMesh.material = glowMaterial;
+            }
+        });
+
+        // Create connection lines
+        connectedSysObjs.forEach(connectedSysObj => {
+            const connectedPos = new THREE.Vector3();
+            connectedSysObj.starMesh.getWorldPosition(connectedPos);
+            createWormholeConnection(centerPos, connectedPos);
+        });
+    }
+
+    // Function to create animated wormhole connection between two points
+    function createWormholeConnection(pos1, pos2) {
+        const points = [];
+        const segments = 20;
+
+        // Create curved path with some randomness for organic feel
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const curve = Math.sin(t * Math.PI) * 0.8; // Arch effect
+
+            const midPoint = new THREE.Vector3().lerpVectors(pos1, pos2, t);
+            midPoint.y += curve;
+
+            // Add some controlled randomness for organic wormhole effect
+            const randomOffset = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.3,
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.3
+            );
+            midPoint.add(randomOffset.multiplyScalar(curve));
+
+            points.push(midPoint);
+        }
+
+        // Create the line geometry
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+        // Create animated wormhole material
+        const material = new THREE.LineBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.8,
+            linewidth: 3
+        });
+
+        const line = new THREE.Line(geometry, material);
+        line.userData = {
+            isWormhole: true,
+            animationPhase: Math.random() * Math.PI * 2,
+            originalOpacity: 0.8
+        };
+
+        scene.add(line);
+        connectionLines.push(line);
+
+        // Create particles along the line for extra effect
+        createWormholeParticles(points);
+    }
+
+    // Function to create particle effects along wormhole
+    function createWormholeParticles(points) {
+        const particleCount = 30;
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            // Distribute particles along the path
+            const pathIndex = Math.floor((i / particleCount) * (points.length - 1));
+            const point = points[pathIndex];
+
+            positions[i * 3] = point.x + (Math.random() - 0.5) * 0.2;
+            positions[i * 3 + 1] = point.y + (Math.random() - 0.5) * 0.2;
+            positions[i * 3 + 2] = point.z + (Math.random() - 0.5) * 0.2;
+
+            // Cyan to purple gradient
+            colors[i * 3] = 0.3 + Math.random() * 0.7;     // R
+            colors[i * 3 + 1] = 0.8 + Math.random() * 0.2; // G
+            colors[i * 3 + 2] = 1.0;                       // B
+
+            sizes[i] = Math.random() * 0.05 + 0.02;
+        }
+
+        const particleGeometry = new THREE.BufferGeometry();
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 0.05,
+            sizeAttenuation: true,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        particles.userData = {
+            isWormholeParticles: true,
+            animationPhase: Math.random() * Math.PI * 2
+        };
+
+        scene.add(particles);
+        connectionLines.push(particles);
+    }
+
+    // Function to clear connection view
+    function clearConnectionView() {
+        console.log('Clearing connection view');
+
+        if (!isConnectionView) return;
+
+        isConnectionView = false;
+
+        // Remove all connection lines and particles
+        connectionLines.forEach(line => {
+            scene.remove(line);
+            if (line.geometry) line.geometry.dispose();
+            if (line.material) line.material.dispose();
+        });
+        connectionLines = [];
+
+        // Restore original materials
+        originalMaterials.forEach((originalMaterial, mesh) => {
+            mesh.material = originalMaterial;
+        });
+        originalMaterials.clear();
+
+        // Show all systems
+        systemContainers.forEach(sysObj => {
+            sysObj.containerGroup.visible = true;
+        });
+
+        connectedSystemMeshes = [];
+    }
+
     // Function to restore all systems
     function restoreAllSystems() {
         console.log('Restoring all systems');
+
+        // Clear connection view first
+        clearConnectionView();
 
         if (originalSystemVisibility.length > 0) {
             originalSystemVisibility.forEach(item => {
@@ -869,6 +1165,10 @@ window.initPlanetMap = async function(){
     // Function to show system information
     function showSystemInformation(system) {
         console.log('Showing information for system:', system.name);
+        console.log('DEBUG - System object keys:', Object.keys(system));
+        console.log('DEBUG - System.links:', system.links);
+        console.log('DEBUG - typeof system.links:', typeof system.links);
+        console.log('DEBUG - Array.isArray(system.links):', Array.isArray(system.links));
 
         const infoWidget = document.getElementById('systemInfoWidget');
         const infoTitle = document.getElementById('systemInfoTitle');
@@ -919,7 +1219,7 @@ window.initPlanetMap = async function(){
                         <p><strong>Planets:</strong> ${planetCount}</p>
                         <p><strong>Total Resources:</strong> ${totalResources}</p>
                         <p><strong>Unique Resources:</strong> ${uniqueResources.size}</p>
-                        <p><strong>Connected Systems:</strong> ${system.links ? system.links.length : 0}</p>
+                        <p><strong>Connected Systems:</strong> ${system.links ? system.links.length : 0} ${system.links ? `(${system.links.slice(0, 3).join(', ')}${system.links.length > 3 ? '...' : ''})` : ''}</p>
                     </div>
 
                     <h4 style="color:#4CAF50;margin:15px 0 10px 0;">💎 Available Resources</h4>
@@ -1027,13 +1327,118 @@ window.initPlanetMap = async function(){
 
     // Add keyboard shortcut to restore view (ESC key)
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && selectedSystemData) {
-            restoreAllSystems();
+        if (event.key === 'Escape') {
+            if (isConnectionView) {
+                clearConnectionView();
+            } else if (selectedSystemData) {
+                restoreAllSystems();
+            }
         }
     });
 
-    // Make restoreAllSystems available globally
+    // Function to show center button
+    function showCenterButton() {
+        const centerBtn = document.getElementById('centerLastClickedBtn');
+        if (centerBtn) {
+            centerBtn.style.display = 'block';
+        }
+    }
+
+    // Function to center camera on last clicked star
+    function centerOnLastClickedStar() {
+        if (!lastClickedSystemData) {
+            console.log('No star has been clicked yet');
+            return;
+        }
+
+        console.log('Centering on:', lastClickedSystemData.system.name);
+
+        const sysObj = lastClickedSystemData.sysObj;
+        const starPos = new THREE.Vector3();
+        sysObj.starMesh.getWorldPosition(starPos);
+
+        // Calculate a good camera distance (proportional to system size)
+        const baseDistance = 15;
+        const systemScale = sysObj.starMesh.scale.x || 1;
+        const targetDistance = baseDistance * Math.max(systemScale, 1);
+
+        // Position camera at an angle above and behind the star
+        const cameraOffset = new THREE.Vector3(
+            targetDistance * 0.7,
+            targetDistance * 0.5,
+            targetDistance * 0.7
+        );
+
+        const targetCameraPos = starPos.clone().add(cameraOffset);
+
+        // Smooth camera transition
+        smoothCameraTransition(targetCameraPos, starPos, 1500);
+    }
+
+    // Function to smoothly move camera to target position
+    function smoothCameraTransition(targetPos, lookAtPos, duration = 1000) {
+        const startPos = camera.position.clone();
+        const startTarget = controls.target.clone();
+        const startTime = Date.now();
+
+        function animateCamera() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Use easing function for smooth transition
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+
+            // Interpolate camera position
+            camera.position.lerpVectors(startPos, targetPos, eased);
+
+            // Interpolate target position
+            controls.target.lerpVectors(startTarget, lookAtPos, eased);
+
+            controls.update();
+
+            if (progress < 1) {
+                requestAnimationFrame(animateCamera);
+            } else {
+                console.log('Camera centering complete');
+            }
+        }
+
+        animateCamera();
+    }
+
+    // Function to toggle fullscreen
+    function toggleFullscreen() {
+        const planetMapContainer = document.getElementById('planetMap');
+
+        if (!document.fullscreenElement) {
+            planetMapContainer.requestFullscreen().then(() => {
+                // Resize renderer to fullscreen
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            }).catch(err => {
+                console.log('Error attempting to enable fullscreen:', err);
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                // Resize renderer back to container
+                const container = document.getElementById('planetMap');
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+        }
+    }
+
+    // Make functions available globally
     window.restoreAllSystems = restoreAllSystems;
+    window.clearConnectionView = clearConnectionView;
+    window.centerOnLastClickedStar = centerOnLastClickedStar;
+    window.toggleFullscreen = toggleFullscreen;
 
     // Basic instructions overlay
     const note = document.querySelector('#planetMapSection .map-note');

@@ -297,12 +297,13 @@ claimStakeTests.test('BuildingExplorer should initialize correctly', () => {
     const testContainer = document.createElement('div');
     testContainer.innerHTML = `
         <div id="tierFilters"></div>
-        <div id="typeFilters"></div>
         <div id="propertyFilters">
             <input type="checkbox" id="comesWithStake" value="comesWithStake">
             <input type="checkbox" id="cannotRemove" value="cannotRemove">
             <input type="checkbox" id="hasExtraction" value="hasExtraction">
         </div>
+        <div id="enablesFilters"></div>
+        <div id="productionFilters"></div>
         <div id="buildingsContainer"></div>
         <div id="totalBuildings">0</div>
         <div id="filteredBuildings">0</div>
@@ -325,7 +326,7 @@ claimStakeTests.test('BuildingExplorer should initialize correctly', () => {
 
         assertInstanceOf(explorer, BuildingExplorer, 'Should create BuildingExplorer instance');
         assertEquals(explorer.data, mockData, 'Should store data correctly');
-        assertEquals(explorer.filteredBuildings.length, 0, 'Should start with no filtered buildings');
+        assertEquals(explorer.filteredBuildings.length, 2, 'Should start with all buildings displayed');
         assertEquals(explorer.selectedTiers.size, 0, 'Should have no selected tiers initially');
 
     } finally {
@@ -387,12 +388,13 @@ claimStakeTests.test('ClaimStakeApp should initialize correctly', async () => {
     const testContainer = document.createElement('div');
     testContainer.innerHTML = `
         <div id="tierFilters"></div>
-        <div id="typeFilters"></div>
         <div id="propertyFilters">
             <input type="checkbox" id="comesWithStake" value="comesWithStake">
             <input type="checkbox" id="cannotRemove" value="cannotRemove">
             <input type="checkbox" id="hasExtraction" value="hasExtraction">
         </div>
+        <div id="enablesFilters"></div>
+        <div id="productionFilters"></div>
         <div id="buildingsContainer"></div>
         <div id="totalBuildings">0</div>
         <div id="filteredBuildings">0</div>
@@ -1286,7 +1288,6 @@ integrationTests.test('All apps should handle async initialization correctly', a
         claimstake: {
             html: `
                 <div id="tierFilters"></div>
-                <div id="typeFilters"></div>
                 <div id="buildingsContainer"></div>
                 <div id="totalBuildings">0</div>
                 <div id="searchInput"></div>

@@ -5,8 +5,9 @@ class BuildingExplorer {
         this.filteredBuildings = [];
         this.currentSearchTerm = '';
         this.selectedTiers = new Set();
-        this.selectedTypes = new Set();
         this.selectedProperties = new Set();
+        this.selectedEnables = new Set();
+
 
         this.extractAllMetadata();
         this.populateFilters();
@@ -16,16 +17,11 @@ class BuildingExplorer {
 
     extractAllMetadata() {
         this.allTiers = new Set();
-        this.allTypes = new Set();
         this.allResources = new Set();
 
         this.data.allBuildings.forEach(building => {
             if (building.tier) {
                 this.allTiers.add(building.tier);
-            }
-
-            if (building.type) {
-                this.allTypes.add(building.type);
             }
 
             if (building.resourceExtractionRate) {
@@ -38,8 +34,8 @@ class BuildingExplorer {
 
     populateFilters() {
         this.populateTierFilters();
-        this.populateTypeFilters();
         this.setupPropertyFilters();
+        this.setupEnablesFilters();
     }
 
     populateTierFilters() {
@@ -81,43 +77,6 @@ class BuildingExplorer {
         }
     }
 
-    populateTypeFilters() {
-        const container = document.getElementById('typeFilters');
-        if (!container) {
-            console.log('⚠️ typeFilters container not found, skipping type filter population');
-            return;
-        }
-
-        try {
-            const sortedTypes = Array.from(this.allTypes).sort();
-
-            sortedTypes.forEach(type => {
-                // Double-check container still exists
-                if (!container) {
-                    console.log('⚠️ Container became null during type filter creation');
-                    return;
-                }
-            const checkboxItem = document.createElement('div');
-            checkboxItem.className = 'checkbox-item';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `type-${type}`;
-            checkbox.value = type;
-            checkbox.addEventListener('change', () => this.handleTypeFilter());
-
-            const label = document.createElement('label');
-            label.htmlFor = `type-${type}`;
-            label.textContent = type;
-
-                checkboxItem.appendChild(checkbox);
-                checkboxItem.appendChild(label);
-                container.appendChild(checkboxItem);
-            });
-        } catch (error) {
-            console.log('⚠️ Error in populateTypeFilters:', error.message);
-        }
-    }
 
     setupPropertyFilters() {
         const propertyCheckboxes = document.querySelectorAll('#propertyFilters input[type="checkbox"]');
@@ -127,6 +86,17 @@ class BuildingExplorer {
         }
         propertyCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => this.handlePropertyFilter());
+        });
+    }
+
+    setupEnablesFilters() {
+        const enablesCheckboxes = document.querySelectorAll('#enablesFilters input[type="checkbox"], #productionFilters input[type="checkbox"]');
+        if (enablesCheckboxes.length === 0) {
+            console.log('⚠️ Enables filter checkboxes not found, skipping enables filter setup');
+            return;
+        }
+        enablesCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => this.handleEnablesFilter());
         });
     }
 
@@ -143,18 +113,19 @@ class BuildingExplorer {
         this.applyFilters();
     }
 
-    handleTypeFilter() {
-        this.selectedTypes.clear();
-        document.querySelectorAll('#typeFilters input[type="checkbox"]:checked').forEach(checkbox => {
-            this.selectedTypes.add(checkbox.value);
-        });
-        this.applyFilters();
-    }
 
     handlePropertyFilter() {
         this.selectedProperties.clear();
         document.querySelectorAll('#propertyFilters input[type="checkbox"]:checked').forEach(checkbox => {
             this.selectedProperties.add(checkbox.value);
+        });
+        this.applyFilters();
+    }
+
+    handleEnablesFilter() {
+        this.selectedEnables.clear();
+        document.querySelectorAll('#enablesFilters input[type="checkbox"]:checked, #productionFilters input[type="checkbox"]:checked').forEach(checkbox => {
+            this.selectedEnables.add(checkbox.value);
         });
         this.applyFilters();
     }
@@ -176,10 +147,6 @@ class BuildingExplorer {
                 return false;
             }
 
-            // Type filter
-            if (this.selectedTypes.size > 0 && !this.selectedTypes.has(building.type)) {
-                return false;
-            }
 
             // Property filters
             if (this.selectedProperties.size > 0) {
@@ -187,6 +154,14 @@ class BuildingExplorer {
                     if (property === 'comesWithStake' && !building.comesWithStake) return false;
                     if (property === 'cannotRemove' && !building.cannotRemove) return false;
                     if (property === 'hasExtraction' && !building.hasExtraction) return false;
+                }
+            }
+
+            // Enables filters
+            if (this.selectedEnables.size > 0) {
+                const buildingTags = building.addedTags || [];
+                for (const enablesTag of this.selectedEnables) {
+                    if (!buildingTags.includes(enablesTag)) return false;
                 }
             }
 
@@ -208,13 +183,12 @@ class BuildingExplorer {
         // Check if no filters are active
         const hasActiveFilters = this.currentSearchTerm ||
             this.selectedTiers.size > 0 ||
-            this.selectedTypes.size > 0 ||
-            this.selectedProperties.size > 0;
+            this.selectedProperties.size > 0 ||
+            this.selectedEnables.size > 0;
 
         if (!hasActiveFilters) {
-            // Show placeholder when no filters are active
-            this.showPlaceholder(container);
-            return;
+            // Show all buildings when no filters are active
+            this.filteredBuildings = this.data.allBuildings;
         }
 
         if (this.filteredBuildings.length === 0) {
