@@ -3,107 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified Explorer Test Suite</title>
+    <title>Siphawaal.xyz Test Suite</title>
     <style>
         body {
-            font-family: 'Consolas', 'Monaco', monospace;
-            margin: 20px;
-            background: #1e1e1e;
-            color: #d4d4d4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
         }
 
-        .header {
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
             text-align: center;
             margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .test-controls {
-            background: #2d2d30;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .test-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .test-button.primary {
+            background: linear-gradient(45deg, #FF6B35, #F7931E);
+            font-size: 18px;
+            grid-column: 1 / -1;
+        }
+
+        .test-button.secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .test-button.individual {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+        }
+
+        .test-button.danger {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .console-output {
+            background: #000;
+            color: #00ff00;
             padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 2px solid #333;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .status.info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+        }
+
+        .status.warning {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid #FF9800;
+        }
+
+        .status.running {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+        }
+
+        .status.completed {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+        }
+
+        .status.failed {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+            color: #FFD700;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 5px;
+            grid-column: 1 / -1;
+        }
+
+        .test-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
         }
 
-        .test-button {
-            background: #0e639c;
+        .legacy-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 5px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 5px;
             cursor: pointer;
-            font-family: inherit;
+            font-size: 12px;
         }
 
-        .test-button:hover {
-            background: #1177bb;
+        .legacy-controls {
+            display: none;
         }
 
-        .test-button.danger {
-            background: #d73a49;
+        .legacy-controls.active {
+            display: block;
         }
 
-        .test-button.danger:hover {
-            background: #e85463;
-        }
+        @media (max-width: 768px) {
+            .test-controls {
+                grid-template-columns: 1fr;
+            }
 
-        .console {
-            background: #0c0c0c;
-            color: #00ff00;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            min-height: 400px;
-            max-height: 600px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            border: 1px solid #444;
-        }
-
-        .status {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        .status.running {
-            background: #2d4a59;
-            border-left: 4px solid #0e639c;
-        }
-
-        .status.completed {
-            background: #1e3a1e;
-            border-left: 4px solid #28a745;
-        }
-
-        .status.failed {
-            background: #3e1e1e;
-            border-left: 4px solid #dc3545;
+            .test-button.primary {
+                grid-column: 1;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🧪 Unified Explorer Test Suite</h1>
-        <p>Comprehensive testing for Recipe Explorer, ClaimStake Explorer, and Planet Explorer</p>
+    <button class="legacy-toggle" onclick="toggleLegacyView()">Legacy View</button>
+
+    <div class="container">
+        <h1>🧪 Siphawaal.xyz Test Suite</h1>
+
+        <div class="test-info">
+            <p><strong>Welcome to the comprehensive test suite for Siphawaal.xyz!</strong></p>
+            <p>This test suite covers all major components including Planet Explorer, Recipe Explorer, ClaimStake Explorer, Resources Explorer, and supporting utilities.</p>
+        </div>
+
+        <div id="status" class="status info">
+            Ready to run tests. Click any button below to begin testing.
+        </div>
+
+        <div class="test-controls">
+            <button class="test-button primary" onclick="runFullSuite()">
+                🚀 Run All Tests
+            </button>
+
+            <div class="section-title">Test Categories</div>
+
+            <button class="test-button secondary" onclick="runCoreTests()">
+                🏗️ Core Infrastructure Tests
+            </button>
+
+            <button class="test-button secondary" onclick="runExplorerTests()">
+                🌍 All Explorer Tests
+            </button>
+
+            <button class="test-button secondary" onclick="runQualityTests()">
+                ✨ Quality Assurance Tests
+            </button>
+
+            <div class="section-title">Individual Test Suites</div>
+
+            <button class="test-button individual" onclick="runDataLoaderTests()">
+                📥 DataLoader Tests
+            </button>
+
+            <button class="test-button individual" onclick="runPlanetTests()">
+                🪐 Planet Explorer Tests
+            </button>
+
+            <button class="test-button individual" onclick="runRecipeTests()">
+                🔧 Recipe Explorer Tests
+            </button>
+
+            <button class="test-button individual" onclick="runClaimStakeTests()">
+                🏭 ClaimStake Explorer Tests
+            </button>
+
+            <button class="test-button individual" onclick="runResourcesTests()">
+                💎 Resources Explorer Tests
+            </button>
+
+            <button class="test-button individual" onclick="runUITests()">
+                🎨 UI/UX Tests
+            </button>
+
+            <button class="test-button individual" onclick="runPerformanceTests()">
+                ⚡ Performance Tests
+            </button>
+
+            <button class="test-button individual" onclick="runErrorHandlingTests()">
+                🛡️ Error Handling Tests
+            </button>
+
+            <button class="test-button individual" onclick="runBaseClassTests()">
+                🔧 Base Class Tests
+            </button>
+
+            <button class="test-button individual" onclick="runIntegrationTests()">
+                🔗 Integration Tests
+            </button>
+
+            <button class="test-button danger" onclick="clearConsole()">
+                🗑️ Clear Console
+            </button>
+        </div>
+
+        <!-- Legacy Controls (hidden by default) -->
+        <div class="legacy-controls" id="legacyControls">
+            <div class="section-title">Legacy Interface</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
+                <button class="test-button" onclick="runDataLoaderTests()">📦 DataLoader Tests</button>
+                <button class="test-button" onclick="runIntegrationTests()">🔗 Integration Tests</button>
+                <button class="test-button" onclick="runBaseClassTests()">⚙️ Base Class Tests</button>
+                <button class="test-button" onclick="runRecipeTests()">🍳 Recipe Tests</button>
+                <button class="test-button" onclick="runClaimStakeTests()">🏗️ ClaimStake Tests</button>
+                <button class="test-button" onclick="runPlanetTests()">🌍 Planet Tests</button>
+            </div>
+        </div>
+
+        <div id="console" class="console-output">
+            🔧 Test environment ready. Click a test button to begin...<br>
+            📊 Test suite includes comprehensive coverage of:<br>
+            &nbsp;&nbsp;• Data loading and processing<br>
+            &nbsp;&nbsp;• UI components and interactions<br>
+            &nbsp;&nbsp;• 3D visualization features<br>
+            &nbsp;&nbsp;• Performance and error handling<br>
+            &nbsp;&nbsp;• Cross-component integration<br><br>
+            💡 Tip: Check browser console for detailed output during test execution.
+        </div>
     </div>
-
-    <div class="test-controls">
-        <h3>Test Controls</h3>
-        <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
-        <button class="test-button" onclick="runDataLoaderTests()">📦 DataLoader Tests</button>
-        <button class="test-button" onclick="runIntegrationTests()">🔗 Integration Tests</button>
-        <button class="test-button" onclick="runBaseClassTests()">⚙️ Base Class Tests</button>
-        <button class="test-button" onclick="runRecipeTests()">🍳 Recipe Tests</button>
-        <button class="test-button" onclick="runClaimStakeTests()">🏗️ ClaimStake Tests</button>
-        <button class="test-button" onclick="runPlanetTests()">🌍 Planet Tests</button>
-        <button class="test-button danger" onclick="clearConsole()">🗑️ Clear Console</button>
-    </div>
-
-    <div id="status" class="status"></div>
-
-    <div class="console" id="console"></div>
 
     <!-- Load Utils first -->
     <script src="../Utils/DOMUtils.js"></script>
@@ -112,111 +287,301 @@
     <script src="../Utils/BaseApp.js"></script>
     <script src="../Utils/DataLoader.js"></script>
 
-    <!-- Load Data from high-level directory -->
-    <script src="../Data/recipes-data.js"></script>
-    <script src="../Data/buildings-data.js"></script>
+    <!-- Load data files -->
     <script src="../Data/planet-data.js"></script>
+    <script src="../Data/buildings-data.js"></script>
+    <script src="../Data/resources-data.js"></script>
+    <script src="../Data/recipes-data.js"></script>
 
-    <!-- Load RecipeExplorer dependencies (if available) -->
-    <script src="../RecipeExplorer/enhanced-tree-renderer.js"></script>
-    <script src="../RecipeExplorer/analytics.js"></script>
-    <script src="../RecipeExplorer/app.js"></script>
+    <!-- Load explorer modules with cache busting -->
+    <script src="../PlanetExplorer/explorer.js?v=20250926"></script>
+    <script src="../PlanetExplorer/analytics.js?v=20250926"></script>
+    <script src="../RecipeExplorer/analytics.js?v=20250926"></script>
+    <script src="../RecipeExplorer/enhanced-tree-renderer.js?v=20250926"></script>
+    <script src="../RecipeExplorer/app.js?v=20250926"></script>
+    <script src="../ClaimStakeExplorer/explorer.js?v=20250926"></script>
+    <script src="../ClaimStakeExplorer/analytics.js?v=20250926"></script>
+    <script src="../ClaimStakeExplorer/app.js?v=20250926"></script>
+    <script src="../ResourcesExplorer/explorer.js?v=20250926"></script>
+    <script src="../ResourcesExplorer/analytics.js?v=20250926"></script>
+    <script src="../ResourcesExplorer/app.js?v=20250926"></script>
 
-    <!-- Load ClaimStakeExplorer dependencies (if available) -->
-    <script src="../ClaimStakeExplorer/explorer.js"></script>
-    <script src="../ClaimStakeExplorer/analytics.js"></script>
-    <script src="../ClaimStakeExplorer/app.js"></script>
+    <!-- Import map for three.js so example modules can resolve the bare specifier 'three' -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js"
+        }
+    }
+    </script>
 
-    <!-- Load PlanetExplorer dependencies (if available) -->
-    <script src="../PlanetExplorer/explorer.js"></script>
-    <script src="../PlanetExplorer/analytics.js"></script>
-    <script src="../PlanetExplorer/app.js"></script>
+    <!-- Load the unified test suite with cache busting -->
+    <script src="test.js?v=20250926"></script>
 
-    <!-- Load the unified test suite -->
-    <script src="test.js"></script>
+    <!-- Load three.js (ES modules) and planet map script -->
+    <script type="module" src="../PlanetExplorer/planetMap.js?v=20250926"></script>
 
     <script>
-        // Console capture and display
-        const consoleElement = document.getElementById('console');
-        const statusElement = document.getElementById('status');
-        const originalConsole = {
-            log: console.log,
-            error: console.error,
-            warn: console.warn
-        };
+        // Console output redirection
+        const consoleDiv = document.getElementById('console');
+        const statusDiv = document.getElementById('status');
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
 
-        function displayInConsole(message, type = 'log') {
+        function logToDiv(message, type = 'log') {
             const timestamp = new Date().toLocaleTimeString();
             const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '📝';
-            consoleElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
-            consoleElement.scrollTop = consoleElement.scrollHeight;
+            consoleDiv.innerHTML += `[${timestamp}] ${prefix} ${message}<br>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
 
-        // Override console methods
         console.log = function(...args) {
-            originalConsole.log.apply(console, args);
-            displayInConsole(args.join(' '), 'log');
+            originalConsoleLog.apply(console, args);
+            logToDiv(args.join(' '));
         };
 
         console.error = function(...args) {
-            originalConsole.error.apply(console, args);
-            displayInConsole(args.join(' '), 'error');
+            originalConsoleError.apply(console, args);
+            logToDiv(args.join(' '), 'error');
         };
 
         console.warn = function(...args) {
-            originalConsole.warn.apply(console, args);
-            displayInConsole(args.join(' '), 'warn');
+            originalConsoleWarn.apply(console, args);
+            logToDiv(args.join(' '), 'warn');
         };
+
+        // Test runner functions
+        async function runFullSuite() {
+            updateStatus('Running all tests...', 'running');
+            console.log('🚀 Starting comprehensive test suite...');
+
+            // Debug: Check what test functions are available
+            console.log('Available test functions:', {
+                UnifiedTestRunner: typeof window.UnifiedTestRunner,
+                testRunner: typeof window.testRunner,
+                runDataLoaderTests: typeof window.runDataLoaderTests,
+                runPlanetTests: typeof window.runPlanetTests,
+                runRecipeTests: typeof window.runRecipeTests
+            });
+
+            // Try different approaches to run the test suite
+            if (typeof window.UnifiedTestRunner !== 'undefined') {
+                console.log('✅ Using UnifiedTestRunner');
+                const runner = new window.UnifiedTestRunner();
+                await runner.runAllTests();
+            } else if (typeof window.testRunner !== 'undefined' && window.testRunner.runAllTests) {
+                console.log('✅ Using window.testRunner');
+                await window.testRunner.runAllTests();
+            } else if (typeof window.runDataLoaderTests === 'function') {
+                console.log('✅ Running individual test suites');
+                // Run individual test suites if available
+                const testSuites = [
+                    'runDataLoaderTests',
+                    'runIntegrationTests',
+                    'runBaseClassTests',
+                    'runRecipeTests',
+                    'runClaimStakeTests',
+                    'runPlanetTests'
+                ];
+
+                for (const suiteName of testSuites) {
+                    if (typeof window[suiteName] === 'function') {
+                        console.log(`Running ${suiteName}...`);
+                        await window[suiteName]();
+                    }
+                }
+            } else {
+                console.log('⚠️ No test runner found. Available window properties:');
+                console.log(Object.keys(window).filter(key => key.includes('test') || key.includes('Test') || key.includes('run')));
+            }
+            updateStatus('All tests completed! Check console for detailed results.', 'completed');
+        }
+
+        async function runCoreTests() {
+            updateStatus('Running core infrastructure tests...', 'running');
+            if (window.runCoreTests && window.runCoreTests !== runCoreTests) {
+                await window.runCoreTests();
+            } else {
+                console.log('⚠️ Core tests not available');
+            }
+            updateStatus('Core tests completed!', 'completed');
+        }
+
+        async function runExplorerTests() {
+            updateStatus('Running all explorer tests...', 'running');
+            if (window.runExplorerTests && window.runExplorerTests !== runExplorerTests) {
+                await window.runExplorerTests();
+            } else {
+                console.log('⚠️ Explorer tests not available');
+            }
+            updateStatus('Explorer tests completed!', 'completed');
+        }
+
+        async function runQualityTests() {
+            updateStatus('Running quality assurance tests...', 'running');
+            if (window.runQualityTests && window.runQualityTests !== runQualityTests) {
+                await window.runQualityTests();
+            } else {
+                console.log('⚠️ Quality tests not available');
+            }
+            updateStatus('Quality tests completed!', 'completed');
+        }
+
+        // Individual test suite runners
+        async function runDataLoaderTests() {
+            updateStatus('Running DataLoader tests...', 'running');
+            await window.runDataLoaderTests();
+            updateStatus('DataLoader tests completed!', 'completed');
+        }
+
+        async function runPlanetTests() {
+            updateStatus('Running Planet Explorer tests...', 'running');
+            await window.runPlanetTests();
+            updateStatus('Planet Explorer tests completed!', 'completed');
+        }
+
+        async function runRecipeTests() {
+            updateStatus('Running Recipe Explorer tests...', 'running');
+            await window.runRecipeTests();
+            updateStatus('Recipe Explorer tests completed!', 'completed');
+        }
+
+        async function runClaimStakeTests() {
+            updateStatus('Running ClaimStake Explorer tests...', 'running');
+            await window.runClaimStakeTests();
+            updateStatus('ClaimStake Explorer tests completed!', 'completed');
+        }
+
+        async function runResourcesTests() {
+            updateStatus('Running Resources Explorer tests...', 'running');
+            if (window.runResourcesTests && window.runResourcesTests !== runResourcesTests) {
+                await window.runResourcesTests();
+            } else {
+                console.log('⚠️ Resources tests not available');
+            }
+            updateStatus('Resources Explorer tests completed!', 'completed');
+        }
+
+        async function runUITests() {
+            updateStatus('Running UI/UX tests...', 'running');
+            if (window.runUITests && window.runUITests !== runUITests) {
+                await window.runUITests();
+            } else {
+                console.log('⚠️ UI tests not available');
+            }
+            updateStatus('UI/UX tests completed!', 'completed');
+        }
+
+        async function runPerformanceTests() {
+            updateStatus('Running performance tests...', 'running');
+            if (window.runPerformanceTests && window.runPerformanceTests !== runPerformanceTests) {
+                await window.runPerformanceTests();
+            } else {
+                console.log('⚠️ Performance tests not available');
+            }
+            updateStatus('Performance tests completed!', 'completed');
+        }
+
+        async function runErrorHandlingTests() {
+            updateStatus('Running error handling tests...', 'running');
+            if (window.runErrorHandlingTests && window.runErrorHandlingTests !== runErrorHandlingTests) {
+                await window.runErrorHandlingTests();
+            } else {
+                console.log('⚠️ Error handling tests not available');
+            }
+            updateStatus('Error handling tests completed!', 'completed');
+        }
+
+        async function runBaseClassTests() {
+            updateStatus('Running base class tests...', 'running');
+            await window.runBaseClassTests();
+            updateStatus('Base class tests completed!', 'completed');
+        }
+
+        async function runIntegrationTests() {
+            updateStatus('Running integration tests...', 'running');
+            await window.runIntegrationTests();
+            updateStatus('Integration tests completed!', 'completed');
+        }
+
+        // Legacy support - prevent infinite recursion
+        async function runAllTests() {
+            updateStatus('Running all tests via legacy function...', 'running');
+            console.log('🚀 Starting test suite via legacy runAllTests...');
+
+            // Check if the actual test framework is available
+            if (typeof window.testRunner !== 'undefined' && window.testRunner.runAllTests) {
+                await window.testRunner.runAllTests();
+            } else if (typeof window.UnifiedTestRunner !== 'undefined') {
+                const runner = new window.UnifiedTestRunner();
+                await runner.runAllTests();
+            } else {
+                console.log('⚠️ Test framework not yet loaded, waiting...');
+                // Try again after a short delay
+                setTimeout(async () => {
+                    if (typeof window.testRunner !== 'undefined') {
+                        await window.testRunner.runAllTests();
+                    } else {
+                        console.log('❌ Test framework failed to load');
+                    }
+                }, 500);
+            }
+            updateStatus('All tests completed!', 'completed');
+        }
+
+        function toggleLegacyView() {
+            const legacyControls = document.getElementById('legacyControls');
+            legacyControls.classList.toggle('active');
+        }
+
+        function updateStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
 
         function clearConsole() {
-            consoleElement.textContent = '';
-            statusElement.textContent = '';
-            statusElement.className = 'status';
+            consoleDiv.innerHTML = '';
+            updateStatus('Console cleared. Ready for new tests.', 'info');
         }
 
-        function setStatus(message, type = 'running') {
-            statusElement.textContent = message;
-            statusElement.className = `status ${type}`;
-        }
+        // Recursion prevention
+        let isTestRunning = false;
+        const originalRunFullSuite = runFullSuite;
+        const originalRunAllTests = runAllTests;
 
-        // Override test runner methods to update status
-        const originalRunAllTests = window.runAllTests;
-
-        window.runAllTests = async function() {
-            setStatus('🚀 Running all test suites...', 'running');
+        runFullSuite = async function() {
+            if (isTestRunning) {
+                console.log('⚠️ Test suite already running, preventing recursion');
+                return;
+            }
+            isTestRunning = true;
             try {
-                await originalRunAllTests();
-                setStatus('✅ All test suites completed', 'completed');
-            } catch (error) {
-                setStatus('❌ Test execution failed', 'failed');
-                console.error('Test execution error:', error);
+                await originalRunFullSuite();
+            } finally {
+                isTestRunning = false;
             }
         };
 
-        // Add individual test status updates
-        ['runDataLoaderTests', 'runIntegrationTests', 'runBaseClassTests', 'runRecipeTests', 'runClaimStakeTests', 'runPlanetTests'].forEach(testName => {
-            const original = window[testName];
-            if (original) {
-                window[testName] = async function() {
-                    const testType = testName.replace('run', '').replace('Tests', '');
-                    setStatus(`🧪 Running ${testType} tests...`, 'running');
-                    try {
-                        await original();
-                        setStatus(`✅ ${testType} tests completed`, 'completed');
-                    } catch (error) {
-                        setStatus(`❌ ${testType} tests failed`, 'failed');
-                        console.error(`${testType} test error:`, error);
-                    }
-                };
+        runAllTests = async function() {
+            if (isTestRunning) {
+                console.log('⚠️ Test suite already running, preventing recursion');
+                return;
             }
-        });
+            isTestRunning = true;
+            try {
+                await originalRunAllTests();
+            } finally {
+                isTestRunning = false;
+            }
+        };
 
-        // Initial setup message
-        window.addEventListener('load', () => {
-            console.log('🔧 Unified Test Suite loaded successfully');
-            console.log('📊 Available test suites: DataLoader, Integration, Base Classes, Recipe Explorer, ClaimStake Explorer, Planet Explorer');
-            console.log('🎯 Click "Run All Tests" to execute the complete test suite');
-            console.log('=' .repeat(80));
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Enhanced Test Runner Interface Loaded');
+            console.log('📋 Available test suites: Data Loading, Explorers, UI/UX, Performance, Error Handling');
+            console.log('💡 Use the Legacy View toggle to access the original interface');
+            updateStatus('Test runner loaded successfully. Ready to run tests!', 'info');
         });
     </script>
 </body>

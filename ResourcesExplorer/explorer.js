@@ -1,3 +1,4 @@
+// Fixed tier checkbox string/number type mismatch - v2025-09-26c
 class ResourcesExplorer extends BaseExplorer {
     constructor(data) {
         super(data);
@@ -49,21 +50,29 @@ class ResourcesExplorer extends BaseExplorer {
     }
 
     applyFilters() {
+        const categoryFilters = this.selectedFilters.get('category');
+        const tierFilters = this.selectedFilters.get('tier');
+
         const hasActiveFilters = this.currentSearchTerm ||
-                                 this.selectedFilters.get('category')?.size > 0 ||
-                                 this.selectedFilters.get('tier')?.size > 0;
+                                 (categoryFilters && categoryFilters.size > 0) ||
+                                 (tierFilters && tierFilters.size > 0);
 
         console.log(`🔍 ResourcesExplorer applyFilters:`, {
             searchTerm: this.currentSearchTerm,
-            categoryFilters: this.selectedFilters.get('category')?.size || 0,
-            tierFilters: this.selectedFilters.get('tier')?.size || 0,
-            hasActiveFilters
+            categoryFilters: categoryFilters?.size || 0,
+            tierFilters: tierFilters?.size || 0,
+            hasActiveFilters,
+            totalData: this.data.length
         });
 
         if (!hasActiveFilters) {
+            // No filters active - show all data
             this.filteredData = [...this.data];
+            console.log(`✅ No filters active, showing all ${this.filteredData.length} items`);
         } else {
+            // Apply filters using parent logic
             super.applyFilters();
+            console.log(`🔍 Filters applied, showing ${this.filteredData.length} items`);
         }
 
         this.renderItems();
@@ -81,9 +90,19 @@ class ResourcesExplorer extends BaseExplorer {
 
     matchesFilter(resource, filterType, selectedItems) {
         if (filterType === 'category') {
-            return selectedItems.has(resource.category);
+            const matches = selectedItems.has(resource.category);
+            if (selectedItems.size > 0) {
+                console.log(`🏷️ Category filter: ${resource.name} (${resource.category}) → ${matches}`);
+            }
+            return matches;
         } else if (filterType === 'tier') {
-            return selectedItems.has(resource.tier);
+            // Convert tier to string for comparison since checkbox values are strings
+            const tierString = String(resource.tier);
+            const matches = selectedItems.has(tierString);
+            if (selectedItems.size > 0) {
+                console.log(`🎯 Tier filter: ${resource.name} (tier ${resource.tier} → "${tierString}") against [${Array.from(selectedItems).join(', ')}] → ${matches}`);
+            }
+            return matches;
         }
         return true;
     }

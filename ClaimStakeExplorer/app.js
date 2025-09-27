@@ -1,3 +1,4 @@
+// Updated with DOM safety checks - v2025-09-26
 class ClaimStakeApp {
     constructor() {
         console.log('🚀 ClaimStakeApp constructor - VERSION: 2025-09-25-21:42 - WITH DATALOADER');
@@ -41,16 +42,30 @@ class ClaimStakeApp {
     }
 
     initializeModules() {
+        // Check if required DOM elements exist before initializing
+        const requiredElements = ['tierFilters', 'typeFilters', 'buildingsContainer'];
+        const missingElements = requiredElements.filter(id => !document.getElementById(id));
+
+        if (missingElements.length > 0) {
+            console.log(`⚠️ ClaimStake modules not initialized - missing DOM elements: ${missingElements.join(', ')}`);
+            console.log('🧪 This is normal in test environments or when DOM elements are not present');
+            return;
+        }
+
         if (this.data && this.data.allBuildings.length > 0) {
-            // Initialize Explorer module
-            this.buildingExplorer = new BuildingExplorer(this.data);
-            window.buildingExplorer = this.buildingExplorer; // Make available globally for modal interactions
+            try {
+                // Initialize Explorer module
+                this.buildingExplorer = new BuildingExplorer(this.data);
+                window.buildingExplorer = this.buildingExplorer; // Make available globally for modal interactions
 
-            // Initialize Analytics module
-            this.buildingAnalytics = new BuildingAnalytics(this.data);
+                // Initialize Analytics module
+                this.buildingAnalytics = new BuildingAnalytics(this.data);
 
-            console.log(`📈 Modules initialized with ${this.data.allBuildings.length} buildings`);
-            console.log(`🔬 Found ${this.data.metadata.tiers.length} tiers and ${this.data.metadata.buildingTypes.length} building types`);
+                console.log(`📈 Modules initialized with ${this.data.allBuildings.length} buildings`);
+                console.log(`🔬 Found ${this.data.metadata.tiers.length} tiers and ${this.data.metadata.buildingTypes.length} building types`);
+            } catch (error) {
+                console.error('❌ Error initializing ClaimStake modules:', error.message);
+            }
         } else {
             console.error('❌ Cannot initialize modules - no data available');
         }

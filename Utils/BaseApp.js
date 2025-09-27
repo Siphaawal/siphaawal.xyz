@@ -3,6 +3,7 @@ class BaseApp {
         this.data = null;
         this.currentTab = 'explorer';
         this.modules = {};
+        this.mapInitialized = false;
     }
 
     async init() {
@@ -120,6 +121,15 @@ class BaseApp {
                 console.log('🔍 Refreshing explorer view...');
                 this.modules.explorer.renderItems();
                 this.modules.explorer.updateStats();
+            } else if (tabName === '3dviewer') {
+                console.log('🚀 Initializing 3D Viewer...');
+                // Initialize 3D map when tab is first shown
+                setTimeout(() => {
+                    if (window.initPlanetMap && !this.mapInitialized) {
+                        window.initPlanetMap();
+                        this.mapInitialized = true;
+                    }
+                }, 100); // Small delay to ensure tab content is visible
             }
 
             console.log('✅ Tab switch complete');

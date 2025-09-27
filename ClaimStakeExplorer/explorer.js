@@ -1,3 +1,4 @@
+// Updated with null safety checks - v2025-09-26
 class BuildingExplorer {
     constructor(data) {
         this.data = data;
@@ -43,33 +44,59 @@ class BuildingExplorer {
 
     populateTierFilters() {
         const container = document.getElementById('tierFilters');
-        const sortedTiers = Array.from(this.allTiers).sort((a, b) => a - b);
+        if (!container) {
+            console.log('⚠️ tierFilters container not found, skipping tier filter population');
+            return;
+        }
 
-        sortedTiers.forEach(tier => {
-            const checkboxItem = document.createElement('div');
-            checkboxItem.className = 'checkbox-item';
+        try {
+            const sortedTiers = Array.from(this.allTiers).sort((a, b) => a - b);
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `tier-${tier}`;
-            checkbox.value = tier;
-            checkbox.addEventListener('change', () => this.handleTierFilter());
+            sortedTiers.forEach(tier => {
+                // Double-check container still exists
+                if (!container) {
+                    console.log('⚠️ Container became null during tier filter creation');
+                    return;
+                }
 
-            const label = document.createElement('label');
-            label.htmlFor = `tier-${tier}`;
-            label.textContent = `Tier ${tier}`;
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'checkbox-item';
 
-            checkboxItem.appendChild(checkbox);
-            checkboxItem.appendChild(label);
-            container.appendChild(checkboxItem);
-        });
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `tier-${tier}`;
+                checkbox.value = tier;
+                checkbox.addEventListener('change', () => this.handleTierFilter());
+
+                const label = document.createElement('label');
+                label.htmlFor = `tier-${tier}`;
+                label.textContent = `Tier ${tier}`;
+
+                checkboxItem.appendChild(checkbox);
+                checkboxItem.appendChild(label);
+                container.appendChild(checkboxItem);
+            });
+        } catch (error) {
+            console.log('⚠️ Error in populateTierFilters:', error.message);
+        }
     }
 
     populateTypeFilters() {
         const container = document.getElementById('typeFilters');
-        const sortedTypes = Array.from(this.allTypes).sort();
+        if (!container) {
+            console.log('⚠️ typeFilters container not found, skipping type filter population');
+            return;
+        }
 
-        sortedTypes.forEach(type => {
+        try {
+            const sortedTypes = Array.from(this.allTypes).sort();
+
+            sortedTypes.forEach(type => {
+                // Double-check container still exists
+                if (!container) {
+                    console.log('⚠️ Container became null during type filter creation');
+                    return;
+                }
             const checkboxItem = document.createElement('div');
             checkboxItem.className = 'checkbox-item';
 
@@ -83,14 +110,21 @@ class BuildingExplorer {
             label.htmlFor = `type-${type}`;
             label.textContent = type;
 
-            checkboxItem.appendChild(checkbox);
-            checkboxItem.appendChild(label);
-            container.appendChild(checkboxItem);
-        });
+                checkboxItem.appendChild(checkbox);
+                checkboxItem.appendChild(label);
+                container.appendChild(checkboxItem);
+            });
+        } catch (error) {
+            console.log('⚠️ Error in populateTypeFilters:', error.message);
+        }
     }
 
     setupPropertyFilters() {
         const propertyCheckboxes = document.querySelectorAll('#propertyFilters input[type="checkbox"]');
+        if (propertyCheckboxes.length === 0) {
+            console.log('⚠️ Property filter checkboxes not found, skipping property filter setup');
+            return;
+        }
         propertyCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => this.handlePropertyFilter());
         });
@@ -165,6 +199,10 @@ class BuildingExplorer {
 
     renderBuildings() {
         const container = document.getElementById('buildingsContainer');
+        if (!container) {
+            console.log('⚠️ buildingsContainer not found, skipping building rendering');
+            return;
+        }
         container.innerHTML = '';
 
         // Check if no filters are active
@@ -304,6 +342,11 @@ class BuildingExplorer {
         const modalTitle = document.getElementById('modalTitle');
         const modalContent = document.getElementById('modalContent');
 
+        if (!modal || !modalTitle || !modalContent) {
+            console.log('⚠️ Modal elements not found, skipping building details display');
+            return;
+        }
+
         modalTitle.textContent = building.name;
 
         // Construction cost details
@@ -415,7 +458,14 @@ class BuildingExplorer {
         const totalBuildings = this.data.allBuildings.length;
         const filteredCount = this.filteredBuildings.length;
 
-        document.getElementById('totalBuildings').textContent = totalBuildings;
-        document.getElementById('filteredBuildings').textContent = filteredCount;
+        const totalElement = document.getElementById('totalBuildings');
+        const filteredElement = document.getElementById('filteredBuildings');
+
+        if (totalElement) {
+            totalElement.textContent = totalBuildings;
+        }
+        if (filteredElement) {
+            filteredElement.textContent = filteredCount;
+        }
     }
 }

@@ -1,3 +1,4 @@
+// Enhanced filter handling with better debugging - v2025-09-26b
 class BaseExplorer {
     constructor(data) {
         this.data = data;
@@ -80,7 +81,7 @@ class BaseExplorer {
         possibleSelectors.forEach(selector => {
             const checkboxes = document.querySelectorAll(selector);
             if (checkboxes.length > 0) {
-                console.log(`✅ Found ${checkboxes.length} checkboxes with selector: ${selector}`);
+                console.log(`✅ Found ${checkboxes.length} checked checkboxes with selector: ${selector}`);
                 found = true;
                 checkboxes.forEach(checkbox => {
                     selectedItems.add(checkbox.value);
@@ -90,11 +91,35 @@ class BaseExplorer {
         });
 
         if (!found) {
-            console.warn(`⚠️ No checkboxes found for filterType: ${filterType} with any selector`);
+            // Also check if there are any checkboxes at all (unchecked)
+            const allCheckboxSelectors = [
+                `#${filterType}Filters input[type="checkbox"]`,
+                `#${filterType}Checkboxes input[type="checkbox"]`,
+                `#${filterType}Filter input[type="checkbox"]`
+            ];
+
+            let hasCheckboxes = false;
+            allCheckboxSelectors.forEach(selector => {
+                const allCheckboxes = document.querySelectorAll(selector);
+                if (allCheckboxes.length > 0) {
+                    hasCheckboxes = true;
+                    console.log(`📦 Found ${allCheckboxes.length} total checkboxes (none checked) with selector: ${selector}`);
+                }
+            });
+
+            if (!hasCheckboxes) {
+                console.warn(`⚠️ No checkboxes found for filterType: ${filterType} with any selector`);
+            }
         }
 
         console.log(`📋 Selected ${filterType} items:`, Array.from(selectedItems));
+
+        // Always update the filter, even if empty (this ensures unchecking clears the filter)
         this.selectedFilters.set(filterType, selectedItems);
+
+        console.log(`🔄 Filter updated for ${filterType}, total filters:`,
+                   Object.fromEntries(Array.from(this.selectedFilters.entries()).map(([k, v]) => [k, Array.from(v)])));
+
         this.applyFilters();
     }
 

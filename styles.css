@@ -309,3 +309,27 @@ body::before {
         font-size: 1.5rem;
     }
 }
+
+/* Star map styles */
+.map-section {
+    margin-top: 3rem;
+    background: rgba(0,0,0,0.45);
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(100,255,218,0.08);
+}
+.map-section h2 {
+    color: #64ffda;
+    margin-bottom: 0.25rem;
+}
+.map-section .map-note {
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 0.75rem;
+}
+.map-tooltip {
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+.map-section #mapCount {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
