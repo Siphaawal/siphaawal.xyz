@@ -8,6 +8,7 @@ import { SceneManager } from './scene.js';
 import { EventHandlers } from './events.js';
 import { ConnectionManager } from './connections.js';
 import { UIManager } from './ui.js';
+import { AudioManager } from './audio.js';
 
 // Global function to initialize the 3D map
 window.initPlanetMap = async function(){
@@ -45,21 +46,26 @@ window.initPlanetMap = async function(){
     // Initialize UI manager
     const uiManager = new UIManager(container, connectionManager);
 
+    // Initialize audio manager
+    const audioManager = new AudioManager();
+
     // Initialize event handlers
-    const eventHandlers = new EventHandlers(sceneManager, connectionManager, uiManager);
+    const eventHandlers = new EventHandlers(sceneManager, connectionManager, uiManager, audioManager);
 
     // Store managers globally for access
     GlobalState.sceneManager = sceneManager;
     GlobalState.connectionManager = connectionManager;
     GlobalState.uiManager = uiManager;
     GlobalState.eventHandlers = eventHandlers;
+    GlobalState.audioManager = audioManager;
 
     // Expose globally for HTML onclick handlers
     window.galiaViewer = {
         sceneManager,
         connectionManager,
         uiManager,
-        eventHandlers
+        eventHandlers,
+        audioManager
     };
 
     // Start the application

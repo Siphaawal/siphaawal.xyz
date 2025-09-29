@@ -61,6 +61,120 @@ export class UIManager {
         }, 5000);
     }
 
+    // Show detailed popup for objects
+    showObjectDetails(type, objectData) {
+        const popup = document.getElementById('objectDetailsPopup');
+        const title = document.getElementById('objectDetailsTitle');
+        const content = document.getElementById('objectDetailsContent');
+
+        if (!popup || !title || !content) return;
+
+        // Hide the simple click status when showing detailed popup
+        const statusDisplay = document.getElementById('clickStatusDisplay');
+        if (statusDisplay) statusDisplay.style.display = 'none';
+
+        if (type === 'star') {
+            const system = objectData.system;
+            const planetCount = system.planets ? system.planets.length : 0;
+            const connectionCount = system.links ? system.links.length : 0;
+
+            title.innerHTML = `⭐ ${system.name || system.key}`;
+
+            let planetsInfo = '';
+            if (system.planets && system.planets.length > 0) {
+                planetsInfo = `
+                    <div style="margin-top: 12px;">
+                        <div style="color: #2196F3; font-weight: bold; margin-bottom: 6px;">🪐 Planets (${planetCount}):</div>
+                        <div style="display: grid; gap: 6px;">
+                            ${system.planets.slice(0, 5).map((planet, index) => `
+                                <div style="background: rgba(255, 255, 255, 0.05); padding: 6px; border-radius: 3px; font-size: 11px;">
+                                    <strong style="color: #fff;">${planet.name || `Planet ${index + 1}`}</strong>
+                                    <div style="color: #ccc; margin-top: 2px;">
+                                        Type: ${this.getPlanetTypeName(planet.type || 0)}
+                                        ${planet.resources && planet.resources.length > 0 ?
+                                            `<br>Resources: ${planet.resources.slice(0, 3).map(r => r.name).join(', ')}${planet.resources.length > 3 ? '...' : ''}`
+                                            : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${planetCount > 5 ? `<div style="color: #888; font-size: 10px; text-align: center;">+ ${planetCount - 5} more planets</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            let connectionsInfo = '';
+            if (system.links && system.links.length > 0) {
+                connectionsInfo = `
+                    <div style="margin-top: 12px;">
+                        <div style="color: #FF9800; font-weight: bold; margin-bottom: 6px;">🔗 Connected Systems (${connectionCount}):</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            ${system.links.slice(0, 8).map(link => `
+                                <span style="background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
+                                    ${link}
+                                </span>
+                            `).join('')}
+                            ${connectionCount > 8 ? `<span style="color: #888; font-size: 10px;">+ ${connectionCount - 8} more</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <div style="color: #ccc; font-size: 11px;">
+                        <div><strong>System Type:</strong> Star System</div>
+                        <div><strong>Planets:</strong> ${planetCount}</div>
+                        <div><strong>Connections:</strong> ${connectionCount}</div>
+                    </div>
+                </div>
+                ${planetsInfo}
+                ${connectionsInfo}
+                <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 10px; color: #888;">
+                    Double-click for system overview • Use center button to focus camera
+                </div>
+            `;
+        } else if (type === 'planet') {
+            const planet = objectData.planet;
+            const system = objectData.parentSystem;
+
+            title.innerHTML = `🪐 ${planet.name || 'Unknown Planet'}`;
+
+            let resourcesInfo = '';
+            if (planet.resources && planet.resources.length > 0) {
+                resourcesInfo = `
+                    <div style="margin-top: 12px;">
+                        <div style="color: #4CAF50; font-weight: bold; margin-bottom: 6px;">💎 Resources (${planet.resources.length}):</div>
+                        <div style="display: grid; gap: 4px;">
+                            ${planet.resources.map(resource => `
+                                <div style="background: rgba(76, 175, 80, 0.1); padding: 4px 8px; border-radius: 3px; font-size: 11px; border-left: 2px solid #4CAF50;">
+                                    <strong style="color: #4CAF50;">${resource.name}</strong>
+                                    ${resource.richness ? `<span style="color: #ccc; margin-left: 8px;">(${resource.richness})</span>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <div style="color: #ccc; font-size: 11px;">
+                        <div><strong>Planet Type:</strong> ${this.getPlanetTypeName(planet.type || 0)}</div>
+                        <div><strong>System:</strong> ${system.name || system.key}</div>
+                        <div><strong>Resources:</strong> ${planet.resources ? planet.resources.length : 0}</div>
+                    </div>
+                </div>
+                ${resourcesInfo}
+                <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 10px; color: #888;">
+                    Double-click for building interface • Click star to see system overview
+                </div>
+            `;
+        }
+
+        popup.style.display = 'block';
+    }
+
     // Show system overview modal with planet selection
     showSystemOverviewModal(system) {
         // Remove existing modal if any

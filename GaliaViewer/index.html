@@ -141,6 +141,46 @@
             margin-bottom: 5px;
             color: #ccc;
         }
+
+        /* Volume slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            background: #333;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #4CAF50;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-track {
+            background: #333;
+            height: 4px;
+            border-radius: 2px;
+            border: none;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            background: #4CAF50;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -165,6 +205,17 @@
 
         <!-- 3D Viewer Controls -->
         <div style="position: absolute; top: 70px; left: 20px; display: flex; gap: 15px; align-items: center; z-index: 1000;">
+            <!-- Volume Control Slider -->
+            <div style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 12px; background: rgba(0, 0, 0, 0.7); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <span id="volumeIcon">🔊</span>
+                <span style="font-size: 11px;">Volume</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="50"
+                       onchange="window.galiaViewer?.audioManager?.setVolume(this.value)"
+                       oninput="window.galiaViewer?.audioManager?.setVolume(this.value)"
+                       style="width: 80px; height: 4px; background: #333; border-radius: 2px; outline: none; cursor: pointer;">
+                <span id="volumePercent" style="font-size: 10px; color: #ccc; min-width: 25px;">50%</span>
+            </div>
+
             <!-- Show All Connections Checkbox -->
             <label style="display: flex; align-items: center; gap: 6px; color: #fff; font-size: 12px; cursor: pointer; background: rgba(0, 0, 0, 0.7); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
                 <input type="checkbox" id="showAllConnectionsCheckbox" onchange="window.galiaViewer?.uiManager?.toggleShowAllConnections(this.checked)"
@@ -187,7 +238,29 @@
                 <!-- Click information will be displayed here -->
             </div>
         </div>
+
+        <!-- Object Details Popup -->
+        <div id="objectDetailsPopup" style="position: absolute; top: 70px; right: 20px; background: rgba(0, 0, 0, 0.9); color: #fff; padding: 15px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.3); display: none; z-index: 1001; max-width: 350px; min-width: 280px; backdrop-filter: blur(5px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 8px;">
+                <div id="objectDetailsTitle" style="font-weight: bold; color: #4CAF50; font-size: 14px;"></div>
+                <button onclick="document.getElementById('objectDetailsPopup').style.display='none'"
+                        style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    ✕
+                </button>
+            </div>
+            <div id="objectDetailsContent">
+                <!-- Detailed information will be displayed here -->
+            </div>
+        </div>
     </div>
+
+    <!-- Audio Elements -->
+    <audio id="backgroundMusic" loop preload="auto">
+        <source src="../SFX/Backgroundmusic.wav" type="audio/wav">
+    </audio>
+    <audio id="clickSound" preload="auto">
+        <source src="../SFX/Single-Click-Planet.wav" type="audio/wav">
+    </audio>
 
     <div class="instructions">
         <h3>Controls:</h3>
@@ -221,6 +294,7 @@
     <script type="module" src="connections.js"></script>
     <script type="module" src="events.js"></script>
     <script type="module" src="ui.js"></script>
+    <script type="module" src="audio.js"></script>
 
     <!-- Load Core Last -->
     <script type="module" src="core.js"></script>
@@ -253,6 +327,18 @@
                     loading.style.display = 'none';
                 }
             }, 2000);
+
+            // Add specific click handlers for UI elements
+            document.addEventListener('click', (event) => {
+                // Only play for specific interactive elements (exclude volume slider)
+                if (event.target.tagName === 'BUTTON' ||
+                    (event.target.type === 'checkbox' && event.target.id !== 'volumeSlider') ||
+                    (event.target.closest('label') && event.target.closest('label').querySelector('input[type="checkbox"]'))) {
+                    if (window.galiaViewer?.audioManager) {
+                        window.galiaViewer.audioManager.handleClick();
+                    }
+                }
+            });
         });
 
         // Global error handling

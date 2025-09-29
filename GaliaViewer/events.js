@@ -3,10 +3,11 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.m
 import { GlobalState } from './state.js';
 
 export class EventHandlers {
-    constructor(sceneManager, connectionManager, uiManager) {
+    constructor(sceneManager, connectionManager, uiManager, audioManager) {
         this.sceneManager = sceneManager;
         this.connectionManager = connectionManager;
         this.uiManager = uiManager;
+        this.audioManager = audioManager;
 
         // Initialize any needed properties
         this.lastClickTime = 0;
@@ -71,16 +72,25 @@ export class EventHandlers {
         event.preventDefault();
         event.stopPropagation();
 
-        // Handle click immediately but defer double-click detection
+        // Handle click with proper double-click detection
         this.lastClickTime = this.lastClickTime || 0;
         const clickTime = performance.now();
         const timeBetweenClicks = clickTime - this.lastClickTime;
 
         if (timeBetweenClicks < 300) {  // Double click threshold
+            // Clear any pending single click timer
+            if (this.clickTimer) {
+                clearTimeout(this.clickTimer);
+                this.clickTimer = null;
+            }
             this.handleDoubleClick(event);
             this.lastClickTime = 0;  // Reset click timer
         } else {
-            this.handleSingleClick(event);
+            // Delay single click to allow for potential double click
+            this.clickTimer = setTimeout(() => {
+                this.handleSingleClick(event);
+                this.clickTimer = null;
+            }, 300);
             this.lastClickTime = clickTime;
         }
     }
@@ -96,6 +106,10 @@ export class EventHandlers {
         const intersects = this.sceneManager.raycaster.intersectObjects(this.sceneManager.allClickableObjects);
 
         if (intersects.length > 0) {
+            // Play click sound only when actually clicking on an object
+            if (this.audioManager) {
+                this.audioManager.handleClick();
+            }
             const obj = intersects[0].object;
             const objectType = obj.userData.type;
 
@@ -114,8 +128,8 @@ export class EventHandlers {
                     // Show the center button
                     this.uiManager.showCenterButton();
 
-                    // Show click status
-                    this.uiManager.showClickStatus('star', { system: sysObj.starMesh.userData.system });
+                    // Show detailed popup for star
+                    this.uiManager.showObjectDetails('star', { system: sysObj.starMesh.userData.system });
 
                     // Show connected systems
                     this.connectionManager.showConnectedSystems(sysObj);
@@ -137,8 +151,8 @@ export class EventHandlers {
                     // Show system connections when clicking planets
                     this.uiManager.showCenterButton();
 
-                    // Show click status
-                    this.uiManager.showClickStatus('planet', { planet: planet, parentSystem: parentSystem });
+                    // Show detailed popup for planet
+                    this.uiManager.showObjectDetails('planet', { planet: planet, parentSystem: parentSystem });
 
                     this.connectionManager.showConnectedSystems(sysObj);
                 }
@@ -164,6 +178,10 @@ export class EventHandlers {
         const intersects = this.sceneManager.raycaster.intersectObjects(this.sceneManager.allClickableObjects);
 
         if (intersects.length > 0) {
+            // Play click sound only when actually double-clicking on an object
+            if (this.audioManager) {
+                this.audioManager.handleClick();
+            }
             const obj = intersects[0].object;
             const objectType = obj.userData.type;
             let sysObj;
