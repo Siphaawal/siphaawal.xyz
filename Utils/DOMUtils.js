@@ -157,12 +157,4 @@ class DOMUtils {
         };
     }
 
-    static formatNumber(num) {
-        return num.toLocaleString();
-    }
-
-    static formatPercentage(value, total) {
-        if (total === 0) return '0%';
-        return ((value / total) * 100).toFixed(1) + '%';
-    }
 }

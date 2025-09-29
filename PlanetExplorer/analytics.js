@@ -1,4 +1,4 @@
-class ResourceAnalytics extends BaseAnalytics {
+class PlanetResourceAnalytics extends BaseAnalytics {
     constructor(data) {
         super(data);
         this.resourceAnalytics = null;

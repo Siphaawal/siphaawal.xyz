@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galia Viewer - 3D Star Map</title>
+    <link rel="icon" href="../favicon.ico" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c, #1a1a2e, #16213e);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .header button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .header button:hover {
+            background: #1976D2;
+        }
+
+        .header .back-btn {
+            background: #FF9800;
+        }
+
+        .header .back-btn:hover {
+            background: #F57C00;
+        }
+
+        .viewer-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+        }
+
+        #planetMap {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        .loading h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            max-width: 300px;
+        }
+
+        .instructions h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Galia Viewer - 3D Star Map</h1>
+        <div class="controls">
+            <button onclick="resetView()">Reset View</button>
+            <button onclick="window.location.href='../index.html'" class="back-btn">
+                ← Back to Hub
+            </button>
+        </div>
+    </div>
+
+    <div class="viewer-container">
+        <div class="loading" id="loadingIndicator">
+            <h2>🌌 Loading Star Map...</h2>
+            <div class="loading-spinner"></div>
+            <p>Initializing 3D universe...</p>
+        </div>
+
+        <div id="planetMap"></div>
+
+        <!-- 3D Viewer Controls -->
+        <div style="position: absolute; top: 70px; left: 20px; display: flex; gap: 15px; align-items: center; z-index: 1000;">
+            <!-- Show All Connections Checkbox -->
+            <label style="display: flex; align-items: center; gap: 6px; color: #fff; font-size: 12px; cursor: pointer; background: rgba(0, 0, 0, 0.7); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <input type="checkbox" id="showAllConnectionsCheckbox" onchange="window.galiaViewer?.uiManager?.toggleShowAllConnections(this.checked)"
+                       style="margin: 0; cursor: pointer;">
+                <span>🔗 Show All Connections</span>
+            </label>
+
+            <!-- Center on Last Star Button -->
+            <button id="centerLastClickedBtn" onclick="window.galiaViewer?.uiManager?.handleCenterButtonClick()"
+                    style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; display: none; position: relative;"
+                    title="Center camera on last clicked star and toggle connections">
+                <span id="centerButtonText">🎯 Center on Last Star</span>
+                <span id="centerButtonIndicator" style="display: none; margin-left: 8px;">✓</span>
+            </button>
+        </div>
+
+        <!-- Click Status Display -->
+        <div id="clickStatusDisplay" style="position: absolute; top: 70px; right: 20px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 10px 15px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.2); display: none; z-index: 1000; max-width: 300px;">
+            <div id="clickStatusContent">
+                <!-- Click information will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>Controls:</h3>
+        <ul>
+            <li>🖱️ <strong>Click & Drag:</strong> Rotate view</li>
+            <li>⭐ <strong>Single-click Star:</strong> Show connections & center button</li>
+            <li>🎯 <strong>Double-click Star:</strong> System overview & planet selection</li>
+            <li>🪐 <strong>Single-click Planet:</strong> Show connections</li>
+            <li>🏗️ <strong>Double-click Planet:</strong> Building interface</li>
+            <li>🔍 <strong>Scroll:</strong> Zoom in/out</li>
+            <li>⌨️ <strong>Escape:</strong> Reset to full map</li>
+        </ul>
+    </div>
+
+    <!-- Load Data -->
+    <script src="../Data/planet-data.js"></script>
+    <script src="../Data/buildings-data.js"></script>
+
+    <!-- Import map for three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js"
+        }
+    }
+    </script>
+
+    <!-- Load Galia Viewer Modules -->
+    <script type="module" src="state.js"></script>
+    <script type="module" src="scene.js"></script>
+    <script type="module" src="connections.js"></script>
+    <script type="module" src="events.js"></script>
+    <script type="module" src="ui.js"></script>
+
+    <!-- Load Core Last -->
+    <script type="module" src="core.js"></script>
+
+    <script>
+        // Global functions
+        function resetView() {
+            if (window.galiaViewer && window.galiaViewer.eventHandlers) {
+                window.galiaViewer.eventHandlers.restoreAllSystems();
+            }
+        }
+
+        // Initialize 3D map and hide loading indicator once everything is loaded
+        window.addEventListener('load', async () => {
+            try {
+                // Initialize the 3D map
+                if (window.initPlanetMap) {
+                    await window.initPlanetMap();
+                    console.log('✅ 3D map initialized successfully');
+                } else {
+                    console.error('❌ initPlanetMap function not found');
+                }
+            } catch (error) {
+                console.error('❌ Failed to initialize 3D map:', error);
+            }
+
+            setTimeout(() => {
+                const loading = document.getElementById('loadingIndicator');
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            }, 2000);
+        });
+
+        // Global error handling
+        window.addEventListener('error', (e) => {
+            console.error('Galia Viewer Error:', e.error);
+            const loading = document.getElementById('loadingIndicator');
+            if (loading) {
+                loading.innerHTML = `
+                    <h2 style="color: #f44336;">⚠️ Loading Error</h2>
+                    <p>Failed to initialize 3D viewer. Please check console for details.</p>
+                    <button onclick="location.reload()" style="margin-top: 10px; padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Retry
+                    </button>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

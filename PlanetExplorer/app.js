@@ -18,7 +18,7 @@ class PlanetApp extends BaseApp {
     initializeModules() {
         if (this.data && this.data.length > 0) {
             this.modules.explorer = new PlanetExplorer(this.data);
-            this.modules.analytics = new ResourceAnalytics(this.data);
+            this.modules.analytics = new PlanetResourceAnalytics(this.data);
 
             // Keep backward compatibility
             this.planetExplorer = this.modules.explorer;
