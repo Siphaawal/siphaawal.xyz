@@ -6,6 +6,10 @@ export class UIManager {
     constructor(container, connectionManager) {
         this.container = container;
         this.connectionManager = connectionManager;
+
+        // Object pooling for performance
+        this.tempVector = new THREE.Vector3();
+        this.tempVector2 = new THREE.Vector3();
     }
 
     // Show the center button when a system is clicked
@@ -286,17 +290,18 @@ export class UIManager {
         }
 
         const sysObj = GlobalState.lastClickedSystemData.sysObj;
-        const targetPos = sysObj.containerGroup.position.clone();
+        this.tempVector.copy(sysObj.containerGroup.position);
+        const targetPos = this.tempVector.clone();
 
-        // Calculate appropriate camera position
+        // Calculate appropriate camera position using object pooling
         const cameraDistance = 20;
-        const cameraPos = new THREE.Vector3(
+        this.tempVector2.set(
             targetPos.x + cameraDistance * 0.7,
             targetPos.y + cameraDistance * 0.5,
             targetPos.z + cameraDistance * 0.7
         );
 
-        this.smoothCameraTransition(cameraPos, targetPos, 1000);
+        this.smoothCameraTransition(this.tempVector2.clone(), targetPos, 1000);
     }
 
     smoothCameraTransition(targetPos, lookAtPos, duration = 1000) {
@@ -311,8 +316,13 @@ export class UIManager {
             // Use easing function for smooth transition
             const ease = 1 - Math.pow(1 - progress, 3);
 
-            GlobalState.sceneManager.camera.position.lerpVectors(startPos, targetPos, ease);
-            GlobalState.sceneManager.controls.target.lerpVectors(startTarget, lookAtPos, ease);
+            // Use object pooling for interpolation
+            this.tempVector.lerpVectors(startPos, targetPos, ease);
+            GlobalState.sceneManager.camera.position.copy(this.tempVector);
+
+            this.tempVector2.lerpVectors(startTarget, lookAtPos, ease);
+            GlobalState.sceneManager.controls.target.copy(this.tempVector2);
+
             GlobalState.sceneManager.controls.update();
 
             if (progress < 1) {

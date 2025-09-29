@@ -5,6 +5,11 @@ import { GlobalState } from './state.js';
 export class ConnectionManager {
     constructor(sceneManager) {
         this.sceneManager = sceneManager;
+
+        // Object pooling for performance
+        this.tempVector = new THREE.Vector3();
+        this.tempVector2 = new THREE.Vector3();
+        this.tempVector3 = new THREE.Vector3();
     }
 
     // Show connected systems for a specific system
@@ -26,8 +31,8 @@ export class ConnectionManager {
         GlobalState.originalMaterials.clear();
 
         const centerSystem = centerSysObj.starMesh.userData.system;
-        const centerPos = new THREE.Vector3();
-        centerSysObj.starMesh.getWorldPosition(centerPos);
+        centerSysObj.starMesh.getWorldPosition(this.tempVector);
+        const centerPos = this.tempVector.clone(); // Clone for safety since it's reused
 
         if (!centerSystem.links || centerSystem.links.length === 0) {
             console.log('No connected systems found');
@@ -84,11 +89,10 @@ export class ConnectionManager {
             }
         });
 
-        // Create connection lines
+        // Create connection lines using object pooling
         connectedSysObjs.forEach(connectedSysObj => {
-            const connectedPos = new THREE.Vector3();
-            connectedSysObj.starMesh.getWorldPosition(connectedPos);
-            this.createWormholeConnection(centerPos, connectedPos);
+            connectedSysObj.starMesh.getWorldPosition(this.tempVector2);
+            this.createWormholeConnection(centerPos, this.tempVector2.clone());
         });
 
         GlobalState.connectedSystemMeshes = connectedSysObjs.map(sysObj => sysObj.starMesh);
@@ -98,23 +102,25 @@ export class ConnectionManager {
         const points = [];
         const segments = 25;
 
-        // Create curved path with some randomness
+        // Create curved path with some randomness using object pooling
         for (let i = 0; i <= segments; i++) {
             const t = i / segments;
             const curve = Math.sin(t * Math.PI) * 0.7; // Arch effect
 
-            const midPoint = new THREE.Vector3().lerpVectors(pos1, pos2, t);
-            midPoint.y += curve;
+            this.tempVector3.lerpVectors(pos1, pos2, t);
+            this.tempVector3.y += curve;
 
-            // Add some random variation for organic feel
-            const randomOffset = new THREE.Vector3(
-                (Math.random() - 0.5) * 0.4,
-                (Math.random() - 0.5) * 0.2,
-                (Math.random() - 0.5) * 0.4
-            );
-            midPoint.add(randomOffset.multiplyScalar(curve));
+            // Add some random variation for organic feel using temp vector
+            const randomX = (Math.random() - 0.5) * 0.4 * curve;
+            const randomY = (Math.random() - 0.5) * 0.2 * curve;
+            const randomZ = (Math.random() - 0.5) * 0.4 * curve;
 
-            points.push(midPoint);
+            this.tempVector3.x += randomX;
+            this.tempVector3.y += randomY;
+            this.tempVector3.z += randomZ;
+
+            // Clone the vector to store in points array
+            points.push(this.tempVector3.clone());
         }
 
         // Create the line geometry
@@ -197,9 +203,11 @@ export class ConnectionManager {
 
         GlobalState.isConnectionView = false;
 
-        // Restore original materials
-        GlobalState.originalMaterials.forEach((originalMaterial, mesh) => {
-            mesh.material = originalMaterial;
+        // Restore original emissive intensities
+        GlobalState.originalMaterials.forEach((originalData, mesh) => {
+            if (mesh.material && typeof originalData.emissiveIntensity === 'number') {
+                mesh.material.emissiveIntensity = originalData.emissiveIntensity;
+            }
         });
         GlobalState.originalMaterials.clear();
 
@@ -225,9 +233,11 @@ export class ConnectionManager {
         });
         GlobalState.connectionLines = [];
 
-        // Restore original materials
-        GlobalState.originalMaterials.forEach((originalMaterial, mesh) => {
-            mesh.material = originalMaterial;
+        // Restore original emissive intensities
+        GlobalState.originalMaterials.forEach((originalData, mesh) => {
+            if (mesh.material && typeof originalData.emissiveIntensity === 'number') {
+                mesh.material.emissiveIntensity = originalData.emissiveIntensity;
+            }
         });
         GlobalState.originalMaterials.clear();
 
@@ -258,8 +268,8 @@ export class ConnectionManager {
                 });
 
                 if (sysObj) {
-                    const centerPos = new THREE.Vector3();
-                    sysObj.starMesh.getWorldPosition(centerPos);
+                    sysObj.starMesh.getWorldPosition(this.tempVector);
+                    const centerPos = this.tempVector.clone();
 
                     system.links.forEach(linkName => {
                         // Create unique connection identifier to avoid duplicates
@@ -274,9 +284,8 @@ export class ConnectionManager {
                             });
 
                             if (connectedSysObj) {
-                                const connectedPos = new THREE.Vector3();
-                                connectedSysObj.starMesh.getWorldPosition(connectedPos);
-                                this.createAllConnectionsWormhole(centerPos, connectedPos, true);
+                                connectedSysObj.starMesh.getWorldPosition(this.tempVector2);
+                                this.createAllConnectionsWormhole(centerPos, this.tempVector2.clone(), true);
                             }
                         }
                     });
@@ -291,24 +300,25 @@ export class ConnectionManager {
         const points = [];
         const segments = isDirect ? 20 : 15;
 
-        // Create curved path
+        // Create curved path using object pooling
         for (let i = 0; i <= segments; i++) {
             const t = i / segments;
             const curve = Math.sin(t * Math.PI) * (isDirect ? 0.4 : 0.2);
 
-            const midPoint = new THREE.Vector3().lerpVectors(pos1, pos2, t);
-            midPoint.y += curve;
+            this.tempVector3.lerpVectors(pos1, pos2, t);
+            this.tempVector3.y += curve;
 
-            // Add random variation
+            // Add random variation using individual components
             const randomIntensity = isDirect ? 0.3 : 0.15;
-            const randomOffset = new THREE.Vector3(
-                (Math.random() - 0.5) * randomIntensity,
-                (Math.random() - 0.5) * randomIntensity * 0.5,
-                (Math.random() - 0.5) * randomIntensity
-            );
-            midPoint.add(randomOffset.multiplyScalar(curve));
+            const randomX = (Math.random() - 0.5) * randomIntensity * curve;
+            const randomY = (Math.random() - 0.5) * randomIntensity * 0.5 * curve;
+            const randomZ = (Math.random() - 0.5) * randomIntensity * curve;
 
-            points.push(midPoint);
+            this.tempVector3.x += randomX;
+            this.tempVector3.y += randomY;
+            this.tempVector3.z += randomZ;
+
+            points.push(this.tempVector3.clone());
         }
 
         // Create the line geometry

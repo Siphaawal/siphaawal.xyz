@@ -20,6 +20,24 @@ export class SceneManager {
         this.targetFPS = 30; // Limit to 30 FPS for better performance
         this.frameInterval = 1000 / this.targetFPS;
 
+        // Object pooling for performance
+        this.tempVector = new THREE.Vector3();
+        this.tempVector2 = new THREE.Vector3();
+        this.tempVector3 = new THREE.Vector3();
+        this.tempQuaternion = new THREE.Quaternion();
+        this.tempMatrix = new THREE.Matrix4();
+
+        // Animation frame counters for optimization
+        this.frameCount = 0;
+        this.STARFIELD_UPDATE_INTERVAL = 5; // Update every 5th frame
+        this.PARTICLE_UPDATE_INTERVAL = 3;   // Update every 3rd frame
+
+        // InstancedMesh setup
+        this.starInstancedMesh = null;
+        this.planetInstancedMesh = null;
+        this.maxStars = 1000; // Max number of star systems
+        this.maxPlanets = 5000; // Max number of planets
+
         // Navigation controls
         this.moveSpeed = 5;
         this.minMoveSpeed = 2;
@@ -113,6 +131,50 @@ export class SceneManager {
         this.camera.updateProjectionMatrix();
     }
 
+    createInstancedMeshes(systemCount) {
+        // Create InstancedMesh for stars
+        const starGeometry = new THREE.SphereGeometry(0.3, 6, 4);
+        const starMaterial = new THREE.MeshStandardMaterial({
+            emissive: 0x444444,
+            metalness: 0.0,
+            roughness: 0.0
+        });
+        this.starInstancedMesh = new THREE.InstancedMesh(starGeometry, starMaterial, Math.max(systemCount, this.maxStars));
+        this.starInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+        // Create instanceColor attribute
+        const starCount = Math.max(systemCount, this.maxStars);
+        const starColors = new Float32Array(starCount * 3);
+        this.starInstancedMesh.instanceColor = new THREE.InstancedBufferAttribute(starColors, 3);
+        this.starInstancedMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+
+        this.scene.add(this.starInstancedMesh);
+
+        console.log(`Created star InstancedMesh with ${starCount} instances`);
+
+        // Create InstancedMesh for planets
+        const planetGeometry = new THREE.SphereGeometry(0.03, 8, 6);
+        const planetMaterial = new THREE.MeshPhongMaterial({
+            emissiveIntensity: 0.2,
+            shininess: 30,
+            specular: 0x444444
+        });
+        this.planetInstancedMesh = new THREE.InstancedMesh(planetGeometry, planetMaterial, this.maxPlanets);
+        this.planetInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+        // Create instanceColor attribute for planets
+        const planetColors = new Float32Array(this.maxPlanets * 3);
+        this.planetInstancedMesh.instanceColor = new THREE.InstancedBufferAttribute(planetColors, 3);
+        this.planetInstancedMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+
+        this.scene.add(this.planetInstancedMesh);
+
+        // Initialize planet counter
+        this.planetInstanceCount = 0;
+
+        console.log(`Created planet InstancedMesh with ${this.maxPlanets} instances`);
+    }
+
     createStarfield() {
         const starGeometry = new THREE.BufferGeometry();
         const starCount = 800; // Reduced from 2000 for better performance
@@ -193,6 +255,9 @@ export class SceneManager {
         console.log(`Coordinate bounds: X[${minX.toFixed(2)}, ${maxX.toFixed(2)}], Y[${minY.toFixed(2)}, ${maxY.toFixed(2)}]`);
         console.log(`Scale factor: ${scale.toFixed(2)}`);
 
+        // Create InstancedMesh for stars and planets
+        this.createInstancedMeshes(systems.length);
+
         systems.forEach((system, index) => {
             const sysObj = this.createSystemObject(system, index, {
                 minX, maxX, minY, maxY, scale
@@ -201,7 +266,22 @@ export class SceneManager {
             this.scene.add(sysObj.containerGroup);
         });
 
-        console.log(`Created ${this.systemContainers.length} system objects with proper coordinate scaling`);
+        // Update all InstancedMesh matrices after creating all systems
+        this.starInstancedMesh.count = systems.length;
+        this.starInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this.starInstancedMesh.instanceColor) {
+            this.starInstancedMesh.instanceColor.needsUpdate = true;
+        }
+
+        this.planetInstancedMesh.count = this.planetInstanceCount;
+        this.planetInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this.planetInstancedMesh.instanceColor) {
+            this.planetInstancedMesh.instanceColor.needsUpdate = true;
+        }
+
+        console.log(`InstancedMesh counts: ${systems.length} stars, ${this.planetInstanceCount} planets`);
+
+        console.log(`Created ${this.systemContainers.length} system objects with InstancedMesh optimization`);
     }
 
     createSystemObject(system, index, coordParams) {
@@ -222,9 +302,6 @@ export class SceneManager {
             console.log(`System ${system.name}: raw[${xRaw.toFixed(2)}, ${yRaw.toFixed(2)}] -> pos[${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}]`);
         }
 
-        // Create smaller, glowier star with lower geometry detail for performance
-        const starGeometry = new THREE.SphereGeometry(0.3, 6, 4); // Much smaller star, lower poly
-
         // Use original faction colors
         const factionColors = {
             'MUD': 0xff4d4d,   // red
@@ -237,50 +314,52 @@ export class SceneManager {
         const faction = (system.faction || system.closestFaction || system.controllingFaction || '').toString().toUpperCase();
         const color = factionColors[faction] || defaultColor;
 
-        // Create glowing material with higher emissive intensity
-        const emissiveColor = new THREE.Color(color).multiplyScalar(0.8);
-        const starMaterial = new THREE.MeshStandardMaterial({
-            color: color,
-            emissive: emissiveColor,
-            metalness: 0.0,
-            roughness: 0.0,
-            transparent: true,
-            opacity: 1.0
-        });
+        // Create star using InstancedMesh
+        this.tempMatrix.identity();
+        this.tempMatrix.setPosition(x, y, z); // World position
+        this.starInstancedMesh.setMatrixAt(index, this.tempMatrix);
 
-        const starMesh = new THREE.Mesh(starGeometry, starMaterial);
-        // Ensure star mesh has complete metadata and is registered for raycasting
-        starMesh.userData = { 
-            system: system, 
-            type: 'star',
-            name: system.name || system.key || 'Unknown System'
+        // Set color using instanceColor attribute
+        const starColor = new THREE.Color(color);
+        this.starInstancedMesh.instanceColor.setXYZ(index, starColor.r, starColor.g, starColor.b);
+
+        // Create virtual star mesh for raycasting compatibility
+        const starMesh = {
+            userData: {
+                system: system,
+                type: 'star',
+                name: system.name || system.key || 'Unknown System',
+                instanceIndex: index
+            },
+            getWorldPosition: (target) => {
+                return target.copy(containerGroup.position);
+            },
+            position: { x: 0, y: 0, z: 0 },
+            material: this.starInstancedMesh.material // Reference to the actual InstancedMesh material
         };
+
         // Register for raycasting and click handling
         this.systemMeshes.push(starMesh);
         this.allClickableObjects.push(starMesh);
-        containerGroup.add(starMesh);
 
-        // Create planets
+        // Create planets using InstancedMesh
         const planets = system.planets || [];
         const planetMeshes = [];
 
         planets.forEach((planet, planetIndex) => {
-            const planetObj = this.createPlanetObject(planet, planetIndex);
+            const planetObj = this.createPlanetObject(planet, planetIndex, system, containerGroup.position);
             planetMeshes.push(planetObj);
 
             // Add planet to clickable objects and mesh arrays
             this.planetMeshes.push(planetObj.mesh);
             this.allClickableObjects.push(planetObj.mesh);
 
-            // Store reference to parent system in planet
-            planetObj.mesh.userData.parentSystem = system;
-
-            containerGroup.add(planetObj.group);
-
             // Create orbit line for each planet - matching smaller orbits
-            const orbitRadius = 0.4 + planetIndex * 0.15;
+            const orbitRadius = 0.3 + planetIndex * 0.12;
             this.createOrbitLine(containerGroup, orbitRadius);
         });
+
+        // Matrix updates will be handled after all systems are created
 
         return {
             containerGroup,
@@ -290,45 +369,55 @@ export class SceneManager {
         };
     }
 
-    createPlanetObject(planet, index) {
-        const group = new THREE.Group();
-
-        // Even smaller orbits and more compact spacing
+    createPlanetObject(planet, index, parentSystem, systemPosition) {
+        // Calculate orbit parameters
         const orbitRadius = 0.3 + index * 0.12;
         const angle = (index / 8) * Math.PI * 2;
 
-        // Create much smaller planets with better detail
-        const baseSize = 0.03;  // Base size reduced by half
-        const planetGeometry = new THREE.SphereGeometry(baseSize + Math.random() * 0.02, 8, 6);
-        
-        // Enhanced material with emissive glow based on type
-        const planetColor = this.getPlanetColor(planet);
-        const planetMaterial = new THREE.MeshPhongMaterial({
-            color: planetColor,
-            emissive: planetColor,
-            emissiveIntensity: 0.2,
-            shininess: 30,
-            specular: 0x444444
-        });
-
-        const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
-        planetMesh.userData = {
-            planet: planet,
-            type: 'planet',
-            orbitRadius,
-            orbitSpeed: 0.003 + (index * 0.001), // Speed based on distance from star
-            rotationSpeed: 0.002 + Math.random() * 0.002 // Slower rotation
-        };
-
-        // Slightly tighter vertical distribution
-        planetMesh.position.set(
+        // Calculate world position for this planet
+        this.tempVector.set(
             Math.cos(angle) * orbitRadius,
-            (Math.random() - 0.5) * 0.2, // Reduced vertical spread
+            (Math.random() - 0.5) * 0.2,
             Math.sin(angle) * orbitRadius
         );
+        this.tempVector.add(systemPosition);
 
-        group.add(planetMesh);
+        // Create planet using InstancedMesh
+        const planetColor = this.getPlanetColor(planet);
+        this.tempMatrix.identity();
+        this.tempMatrix.setPosition(this.tempVector.x, this.tempVector.y, this.tempVector.z);
 
+        if (this.planetInstanceCount < this.maxPlanets) {
+            this.planetInstancedMesh.setMatrixAt(this.planetInstanceCount, this.tempMatrix);
+
+            // Set color using instanceColor attribute
+            const pColor = new THREE.Color(planetColor);
+            this.planetInstancedMesh.instanceColor.setXYZ(this.planetInstanceCount, pColor.r, pColor.g, pColor.b);
+        }
+
+        // Create virtual planet mesh for compatibility
+        const group = new THREE.Group();
+        const planetMesh = {
+            userData: {
+                planet: planet,
+                type: 'planet',
+                orbitRadius,
+                orbitSpeed: 0.003 + (index * 0.001),
+                rotationSpeed: 0.002 + Math.random() * 0.002,
+                parentSystem: parentSystem,
+                instanceIndex: this.planetInstanceCount
+            },
+            position: {
+                x: Math.cos(angle) * orbitRadius,
+                y: (Math.random() - 0.5) * 0.2,
+                z: Math.sin(angle) * orbitRadius
+            },
+            getWorldPosition: (target) => {
+                return target.copy(this.tempVector);
+            }
+        };
+
+        this.planetInstanceCount++;
         return { group, mesh: planetMesh };
     }
 
@@ -533,13 +622,14 @@ export class SceneManager {
         this.lastFrameTime = currentTime;
 
         const t = currentTime * 0.001;
+        this.frameCount++;
 
         // Update controls
         this.controls.update();
         this.updateControlSensitivity();
 
         // Animate starfield less frequently for performance
-        if (this.starfield && currentTime % 200 < this.frameInterval) {
+        if (this.starfield && (this.frameCount % this.STARFIELD_UPDATE_INTERVAL === 0)) {
             const sizes = this.starfield.geometry.attributes.size.array;
             // Only animate every 10th star for performance
             for (let i = 0; i < sizes.length; i += 10) {
@@ -548,8 +638,9 @@ export class SceneManager {
             this.starfield.geometry.attributes.size.needsUpdate = true;
         }
 
-        // Animate all connections wormholes
-        if (GlobalState.showAllConnectionsMode && GlobalState.allSystemConnections.length > 0) {
+        // Animate all connections wormholes (optimized with frame intervals)
+        if (GlobalState.showAllConnectionsMode && GlobalState.allSystemConnections.length > 0 &&
+            (this.frameCount % this.PARTICLE_UPDATE_INTERVAL === 0)) {
             GlobalState.allSystemConnections.forEach(line => {
                 if (line.userData.isAllConnectionsWormhole) {
                     const isDirect = line.userData.isDirect;
@@ -589,30 +680,49 @@ export class SceneManager {
             });
         }
 
-        // Animate planets orbiting their stars, rotating, and star pulsing
-        this.systemContainers.forEach(sysObj => {
-            // Animate planet orbits and rotation
+        // Animate planets orbiting their stars, rotating, and star pulsing (optimized)
+        this.systemContainers.forEach((sysObj, systemIndex) => {
+            // Animate planet orbits and rotation using InstancedMesh
             sysObj.planetMeshes.forEach(planetObj => {
                 const planetMesh = planetObj.mesh;
                 const userData = planetMesh.userData;
 
-                // Orbit around star
-                const orbitAngle = t * userData.orbitSpeed;
-                planetMesh.position.x = Math.cos(orbitAngle) * userData.orbitRadius;
-                planetMesh.position.z = Math.sin(orbitAngle) * userData.orbitRadius;
+                if (userData.instanceIndex !== undefined && userData.instanceIndex < this.maxPlanets) {
+                    // Update orbit position using object pooling
+                    const orbitAngle = t * userData.orbitSpeed;
+                    this.tempVector.set(
+                        Math.cos(orbitAngle) * userData.orbitRadius,
+                        userData.y || 0,
+                        Math.sin(orbitAngle) * userData.orbitRadius
+                    );
+                    this.tempVector.add(sysObj.containerGroup.position);
 
-                // Rotate planet
-                planetMesh.rotation.y += userData.rotationSpeed;
+                    // Update planet position in InstancedMesh
+                    this.tempMatrix.identity();
+                    this.tempMatrix.setPosition(this.tempVector.x, this.tempVector.y, this.tempVector.z);
+                    this.planetInstancedMesh.setMatrixAt(userData.instanceIndex, this.tempMatrix);
+
+                    // Update virtual mesh position for raycasting
+                    planetMesh.position.x = Math.cos(orbitAngle) * userData.orbitRadius;
+                    planetMesh.position.z = Math.sin(orbitAngle) * userData.orbitRadius;
+                }
             });
 
-            // Animate star pulsing
-            const starMesh = sysObj.starMesh;
-            if (starMesh && starMesh.material) {
-                const baseIntensity = 0.3;
-                const pulseIntensity = Math.sin(t * 2 + sysObj.containerGroup.position.x) * 0.1;
-                starMesh.material.emissiveIntensity = baseIntensity + pulseIntensity;
+            // Animate star pulsing (less frequent updates)
+            if (this.frameCount % this.STARFIELD_UPDATE_INTERVAL === 0) {
+                const starMesh = sysObj.starMesh;
+                if (starMesh && starMesh.material) {
+                    const baseIntensity = 0.3;
+                    const pulseIntensity = Math.sin(t * 2 + sysObj.containerGroup.position.x) * 0.1;
+                    starMesh.material.emissiveIntensity = baseIntensity + pulseIntensity;
+                }
             }
         });
+
+        // Update InstancedMesh matrices
+        if (this.planetInstancedMesh) {
+            this.planetInstancedMesh.instanceMatrix.needsUpdate = true;
+        }
 
         // Render
         this.renderer.render(this.scene, this.camera);

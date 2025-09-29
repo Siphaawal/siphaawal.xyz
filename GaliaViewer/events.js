@@ -13,6 +13,11 @@ export class EventHandlers {
         this.lastClickTime = 0;
         this.clickTimer = null;
 
+        // Object pooling for performance
+        this.tempVector = new THREE.Vector3();
+        this.tempVector2 = new THREE.Vector3();
+        this.mouseVector = new THREE.Vector2();
+
         this.setupEventListeners();
     }
 
@@ -43,8 +48,32 @@ export class EventHandlers {
         const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        this.sceneManager.raycaster.setFromCamera(new THREE.Vector2(x, y), this.sceneManager.camera);
-        const intersects = this.sceneManager.raycaster.intersectObjects(this.sceneManager.allClickableObjects);
+        this.mouseVector.set(x, y);
+        this.sceneManager.raycaster.setFromCamera(this.mouseVector, this.sceneManager.camera);
+
+        // Use InstancedMesh raycasting for stars and custom logic for planets
+        const starIntersects = this.sceneManager.raycaster.intersectObject(this.sceneManager.starInstancedMesh);
+        const planetIntersects = this.sceneManager.raycaster.intersectObject(this.sceneManager.planetInstancedMesh);
+
+        let intersects = [];
+
+        // Process star intersects
+        if (starIntersects.length > 0) {
+            const instanceId = starIntersects[0].instanceId;
+            const starMesh = this.sceneManager.systemMeshes[instanceId];
+            if (starMesh) {
+                intersects.push({ object: starMesh });
+            }
+        }
+
+        // Process planet intersects
+        if (planetIntersects.length > 0) {
+            const instanceId = planetIntersects[0].instanceId;
+            const planetMesh = this.sceneManager.planetMeshes.find(p => p.userData.instanceIndex === instanceId);
+            if (planetMesh) {
+                intersects.push({ object: planetMesh });
+            }
+        }
 
         if (intersects.length > 0) {
             this.sceneManager.renderer.domElement.style.cursor = 'pointer';
@@ -102,8 +131,33 @@ export class EventHandlers {
         const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-        this.sceneManager.raycaster.setFromCamera(new THREE.Vector2(x, y), this.sceneManager.camera);
-        const intersects = this.sceneManager.raycaster.intersectObjects(this.sceneManager.allClickableObjects);
+
+        this.mouseVector.set(x, y);
+        this.sceneManager.raycaster.setFromCamera(this.mouseVector, this.sceneManager.camera);
+
+        // Use optimized raycasting with InstancedMesh
+        const starIntersects = this.sceneManager.raycaster.intersectObject(this.sceneManager.starInstancedMesh);
+        const planetIntersects = this.sceneManager.raycaster.intersectObject(this.sceneManager.planetInstancedMesh);
+
+        let intersects = [];
+
+        // Process star intersects
+        if (starIntersects.length > 0) {
+            const instanceId = starIntersects[0].instanceId;
+            const starMesh = this.sceneManager.systemMeshes[instanceId];
+            if (starMesh) {
+                intersects.push({ object: starMesh });
+            }
+        }
+
+        // Process planet intersects
+        if (planetIntersects.length > 0) {
+            const instanceId = planetIntersects[0].instanceId;
+            const planetMesh = this.sceneManager.planetMeshes.find(p => p.userData.instanceIndex === instanceId);
+            if (planetMesh) {
+                intersects.push({ object: planetMesh });
+            }
+        }
 
         if (intersects.length > 0) {
             // Play click sound only when actually clicking on an object
@@ -173,9 +227,32 @@ export class EventHandlers {
         const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        // Check against all clickable objects
-        this.sceneManager.raycaster.setFromCamera(new THREE.Vector2(x, y), this.sceneManager.camera);
-        const intersects = this.sceneManager.raycaster.intersectObjects(this.sceneManager.allClickableObjects);
+        this.mouseVector.set(x, y);
+        this.sceneManager.raycaster.setFromCamera(this.mouseVector, this.sceneManager.camera);
+
+        // Use optimized raycasting with InstancedMesh
+        const starIntersects = this.sceneManager.raycaster.intersectObject(this.sceneManager.starInstancedMesh);
+        const planetIntersects = this.sceneManager.raycaster.intersectObject(this.sceneManager.planetInstancedMesh);
+
+        let intersects = [];
+
+        // Process star intersects
+        if (starIntersects.length > 0) {
+            const instanceId = starIntersects[0].instanceId;
+            const starMesh = this.sceneManager.systemMeshes[instanceId];
+            if (starMesh) {
+                intersects.push({ object: starMesh });
+            }
+        }
+
+        // Process planet intersects
+        if (planetIntersects.length > 0) {
+            const instanceId = planetIntersects[0].instanceId;
+            const planetMesh = this.sceneManager.planetMeshes.find(p => p.userData.instanceIndex === instanceId);
+            if (planetMesh) {
+                intersects.push({ object: planetMesh });
+            }
+        }
 
         if (intersects.length > 0) {
             // Play click sound only when actually double-clicking on an object
@@ -291,9 +368,11 @@ export class EventHandlers {
         const planetCount = sysObj.planetMeshes.length;
         const baseDistance = Math.max(8, planetCount * 2);
 
-        const endPos = new THREE.Vector3(targetPos.x, targetPos.y + baseDistance, targetPos.z);
+        this.tempVector.set(targetPos.x, targetPos.y + baseDistance, targetPos.z);
+        const endPos = this.tempVector.clone();
         const endTarget = targetPos.clone();
-        const endUp = new THREE.Vector3(0, 0, -1); // Top-down view
+        this.tempVector2.set(0, 0, -1);
+        const endUp = this.tempVector2.clone(); // Top-down view
 
         const startTime = performance.now();
 
@@ -304,10 +383,15 @@ export class EventHandlers {
             // Easing function for smooth transition
             const ease = 1 - Math.pow(1 - progress, 3);
 
-            // Interpolate position
-            this.sceneManager.camera.position.lerpVectors(startPos, endPos, ease);
-            this.sceneManager.controls.target.lerpVectors(startTarget, endTarget, ease);
-            this.sceneManager.camera.up.lerpVectors(startUp, endUp, ease);
+            // Interpolate position using object pooling
+            this.tempVector.lerpVectors(startPos, endPos, ease);
+            this.sceneManager.camera.position.copy(this.tempVector);
+
+            this.tempVector2.lerpVectors(startTarget, endTarget, ease);
+            this.sceneManager.controls.target.copy(this.tempVector2);
+
+            this.tempVector.lerpVectors(startUp, endUp, ease);
+            this.sceneManager.camera.up.copy(this.tempVector);
 
             this.sceneManager.camera.lookAt(this.sceneManager.controls.target);
             this.sceneManager.controls.update();
