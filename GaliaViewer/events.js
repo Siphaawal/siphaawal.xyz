@@ -13,6 +13,20 @@ export class EventHandlers {
         this.lastClickTime = 0;
         this.clickTimer = null;
 
+        // Throttle raycasting for performance
+        this.lastRaycastTime = 0;
+        this.raycastThrottleMs = 100; // Only raycast every 100ms
+        this.pendingRaycast = false;
+        this.raycastTimer = null;
+
+        // WASD keyboard controls - smooth ship-like flight
+        this.keyStates = {
+            w: false, a: false, s: false, d: false
+        };
+        this.velocity = new THREE.Vector3(0, 0, 0); // Current velocity
+        this.baseSpeed = 0.08; // Very slow constant speed
+        this.deceleration = 0.85; // Faster deceleration when keys are released
+
         // Object pooling for performance
         this.tempVector = new THREE.Vector3();
         this.tempVector2 = new THREE.Vector3();
@@ -39,11 +53,35 @@ export class EventHandlers {
 
         // Keyboard events
         document.addEventListener('keydown', (e) => this.onKeyDown(e));
+        document.addEventListener('keyup', (e) => this.onKeyUp(e));
     }
 
     onPointerMove(event) {
         if (event.buttons > 0) return; // Skip if dragging
 
+        const now = performance.now();
+
+        // Throttle raycasting - only perform every 100ms
+        if (now - this.lastRaycastTime < this.raycastThrottleMs) {
+            // Schedule a delayed raycast if one isn't already pending
+            if (!this.pendingRaycast) {
+                this.pendingRaycast = true;
+                if (this.raycastTimer) {
+                    clearTimeout(this.raycastTimer);
+                }
+                this.raycastTimer = setTimeout(() => {
+                    this.performRaycast(event);
+                    this.pendingRaycast = false;
+                }, this.raycastThrottleMs - (now - this.lastRaycastTime));
+            }
+            return;
+        }
+
+        this.performRaycast(event);
+        this.lastRaycastTime = now;
+    }
+
+    performRaycast(event) {
         const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -171,7 +209,11 @@ export class EventHandlers {
                 const sysObj = this.sceneManager.systemContainers.find(sc => sc.starMesh === obj);
                 if (sysObj) {
                     const systemName = sysObj.starMesh.userData.system.name || sysObj.starMesh.userData.system.key;
+                    const systemId = systemName || sysObj.starMesh.userData.system.key || sysObj.starMesh.userData.system.id;
                     console.log('Single-clicked system:', systemName);
+
+                    // Check if this is the same system that already has connections displayed
+                    const alreadyShowingConnections = (GlobalState.currentConnectionSystem === systemId);
 
                     // Store last clicked system data for centering
                     GlobalState.lastClickedSystemData = {
@@ -185,8 +227,13 @@ export class EventHandlers {
                     // Show detailed popup for star
                     this.uiManager.showObjectDetails('star', { system: sysObj.starMesh.userData.system });
 
-                    // Show connected systems
-                    this.connectionManager.showConnectedSystems(sysObj);
+                    // Show labels for the system when clicking on a star
+                    this.showLabelsForSystem(sysObj);
+
+                    // Only show connected systems if not already showing for this system
+                    if (!alreadyShowingConnections) {
+                        this.connectionManager.showConnectedSystems(sysObj);
+                    }
                 }
             } else if (objectType === 'planet') {
                 const planet = obj.userData.planet;
@@ -194,7 +241,11 @@ export class EventHandlers {
                 console.log('Single-clicked planet:', planet.name, 'in system:', parentSystem.name);
 
                 // Find the system container for the parent system
-                const sysObj = this.sceneManager.systemContainers.find(sc => sc.system === parentSystem);
+                const systemId = parentSystem.name || parentSystem.key || parentSystem.id;
+                const sysObj = this.sceneManager.systemContainers.find(sc => {
+                    const sys = sc.starMesh.userData.system;
+                    return sys.name === systemId || sys.key === systemId || sys.id === systemId;
+                });
                 if (sysObj) {
                     // Store as last clicked for centering purposes
                     GlobalState.lastClickedSystemData = {
@@ -207,6 +258,9 @@ export class EventHandlers {
 
                     // Show detailed popup for planet
                     this.uiManager.showObjectDetails('planet', { planet: planet, parentSystem: parentSystem });
+
+                    // Show labels for only the clicked planet (hide others)
+                    this.showLabelsForSystem(sysObj, planet);
 
                     this.connectionManager.showConnectedSystems(sysObj);
                 }
@@ -300,9 +354,64 @@ export class EventHandlers {
     }
 
     onKeyDown(event) {
-        if (event.key === 'Escape') {
+        const key = event.key.toLowerCase();
+
+        if (key === 'escape') {
             // Always restore all systems and reset everything
             this.restoreAllSystems();
+            return;
+        }
+
+        // Handle WASD movement keys
+        if (['w', 'a', 's', 'd'].includes(key)) {
+            this.keyStates[key] = true;
+            event.preventDefault(); // Prevent default browser behavior
+        }
+    }
+
+    onKeyUp(event) {
+        const key = event.key.toLowerCase();
+
+        // Handle WASD movement keys
+        if (['w', 'a', 's', 'd'].includes(key)) {
+            this.keyStates[key] = false;
+        }
+    }
+
+    processKeyboardMovement() {
+        // Get camera distance for very slight speed scaling
+        const cameraDistance = this.sceneManager.camera.position.length();
+        const speedScale = Math.max(1, cameraDistance * 0.0005); // Much smaller multiplier for minimal scaling
+
+        // Calculate movement direction based on camera orientation
+        const moveVector = new THREE.Vector3();
+        const cameraDirection = new THREE.Vector3();
+        const rightVector = new THREE.Vector3();
+
+        this.sceneManager.camera.getWorldDirection(cameraDirection);
+        rightVector.crossVectors(cameraDirection, this.sceneManager.camera.up).normalize();
+
+        const currentSpeed = this.baseSpeed * speedScale;
+
+        // Build movement vector based on key states - direct constant movement
+        if (this.keyStates.w) {
+            moveVector.add(cameraDirection.clone().multiplyScalar(currentSpeed));
+        }
+        if (this.keyStates.s) {
+            moveVector.add(cameraDirection.clone().multiplyScalar(-currentSpeed));
+        }
+        if (this.keyStates.a) {
+            moveVector.add(rightVector.clone().multiplyScalar(-currentSpeed));
+        }
+        if (this.keyStates.d) {
+            moveVector.add(rightVector.clone().multiplyScalar(currentSpeed));
+        }
+
+        // Apply movement directly without acceleration/deceleration
+        if (moveVector.length() > 0) {
+            this.sceneManager.camera.position.add(moveVector);
+            this.sceneManager.controls.target.add(moveVector);
+            this.sceneManager.controls.update();
         }
     }
 
@@ -406,7 +515,7 @@ export class EventHandlers {
         requestAnimationFrame(step);
     }
 
-    showLabelsForSystem(sysObj) {
+    showLabelsForSystem(sysObj, specificPlanet = null) {
         this.clearLabels();
 
         const system = sysObj.starMesh.userData.system;
@@ -417,14 +526,30 @@ export class EventHandlers {
         starLabel.position.y += 1;
         sysObj.containerGroup.add(starLabel);
 
-        // Create planet labels
+        // Create planet labels with varying heights
         sysObj.planetMeshes.forEach((planetObj, index) => {
             const planet = planetObj.mesh.userData.planet;
             const planetName = planet.name || `Planet ${index + 1}`;
 
+            // If specificPlanet is provided, only show label for that planet
+            if (specificPlanet && planet !== specificPlanet) {
+                return; // Skip this planet
+            }
+
             const planetLabel = this.createLabel(planetName, false);
             planetLabel.position.copy(planetObj.mesh.position);
-            planetLabel.position.y += 0.5;
+
+            // Vary heights to prevent overlap - alternate between higher and lower positions
+            // Use a pattern that spreads labels at different heights for better visibility
+            const baseHeight = 0.5;
+            const heightVariation = 0.8; // Range of height variation
+            const heightOffset = (index % 4) * (heightVariation / 3); // Creates 4 different height levels
+
+            // Add some randomness while keeping it deterministic for the same planet
+            const planetHash = planetName.length + index; // Simple hash based on name and index
+            const additionalOffset = (planetHash % 3) * 0.2; // Additional 0.0, 0.2, or 0.4 offset
+
+            planetLabel.position.y += baseHeight + heightOffset + additionalOffset;
             sysObj.containerGroup.add(planetLabel);
 
             // Create line from planet to label

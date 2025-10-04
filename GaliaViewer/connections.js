@@ -10,11 +10,27 @@ export class ConnectionManager {
         this.tempVector = new THREE.Vector3();
         this.tempVector2 = new THREE.Vector3();
         this.tempVector3 = new THREE.Vector3();
+
+        // Material pools to prevent memory leaks
+        this.glowMaterialPool = [];
+        this.dimmedMaterialPool = [];
+        this.wormholeMaterialPool = [];
+        this.particleMaterialPool = [];
     }
 
     // Show connected systems for a specific system
     showConnectedSystems(centerSysObj) {
-        console.log('Showing connected systems for:', centerSysObj.starMesh.userData.system.name);
+        const centerSystem = centerSysObj.starMesh.userData.system;
+        const systemId = centerSystem.name || centerSystem.key || centerSystem.id;
+
+        console.log('Showing connected systems for:', systemId);
+        console.log('Current connection system:', GlobalState.currentConnectionSystem);
+
+        // Check if this system already has its connections displayed
+        if (GlobalState.currentConnectionSystem === systemId) {
+            console.log('Connections already displayed for this system, skipping re-render');
+            return;
+        }
 
         // Clear any existing connection lines first to prevent overlapping
         GlobalState.connectionLines.forEach(line => {
@@ -30,7 +46,6 @@ export class ConnectionManager {
         });
         GlobalState.originalMaterials.clear();
 
-        const centerSystem = centerSysObj.starMesh.userData.system;
         centerSysObj.starMesh.getWorldPosition(this.tempVector);
         const centerPos = this.tempVector.clone(); // Clone for safety since it's reused
 
@@ -67,22 +82,28 @@ export class ConnectionManager {
                 // Store original material and apply glow effect
                 const starMesh = sysObj.starMesh;
                 if (!GlobalState.originalMaterials.has(starMesh)) {
-                    GlobalState.originalMaterials.set(starMesh, starMesh.material.clone());
+                    GlobalState.originalMaterials.set(starMesh, starMesh.material);
                 }
 
-                // Create glowing material
-                const glowMaterial = starMesh.material.clone();
-                glowMaterial.emissive.multiplyScalar(3.0);
+                // Get glowing material from pool or create new one
+                let glowMaterial = this.glowMaterialPool.pop();
+                if (!glowMaterial) {
+                    glowMaterial = starMesh.material.clone();
+                }
+                glowMaterial.emissive.copy(starMesh.material.emissive).multiplyScalar(3.0);
                 starMesh.material = glowMaterial;
             } else {
                 // Dim non-connected systems but keep them visible
                 const starMesh = sysObj.starMesh;
                 if (!GlobalState.originalMaterials.has(starMesh)) {
-                    GlobalState.originalMaterials.set(starMesh, starMesh.material.clone());
+                    GlobalState.originalMaterials.set(starMesh, starMesh.material);
                 }
 
-                // Create dimmed material
-                const dimmedMaterial = starMesh.material.clone();
+                // Get dimmed material from pool or create new one
+                let dimmedMaterial = this.dimmedMaterialPool.pop();
+                if (!dimmedMaterial) {
+                    dimmedMaterial = starMesh.material.clone();
+                }
                 dimmedMaterial.opacity = 0.3;
                 dimmedMaterial.transparent = true;
                 starMesh.material = dimmedMaterial;
@@ -96,6 +117,9 @@ export class ConnectionManager {
         });
 
         GlobalState.connectedSystemMeshes = connectedSysObjs.map(sysObj => sysObj.starMesh);
+
+        // Store the current connection system to prevent re-rendering
+        GlobalState.currentConnectionSystem = systemId;
     }
 
     createWormholeConnection(pos1, pos2) {
@@ -203,10 +227,16 @@ export class ConnectionManager {
 
         GlobalState.isConnectionView = false;
 
-        // Restore original emissive intensities
-        GlobalState.originalMaterials.forEach((originalData, mesh) => {
-            if (mesh.material && typeof originalData.emissiveIntensity === 'number') {
-                mesh.material.emissiveIntensity = originalData.emissiveIntensity;
+        // Restore original materials and return used materials to pool
+        GlobalState.originalMaterials.forEach((originalMaterial, mesh) => {
+            if (mesh.material !== originalMaterial) {
+                // Return material to appropriate pool before restoring
+                if (mesh.material.opacity === 0.3) {
+                    this.dimmedMaterialPool.push(mesh.material);
+                } else {
+                    this.glowMaterialPool.push(mesh.material);
+                }
+                mesh.material = originalMaterial;
             }
         });
         GlobalState.originalMaterials.clear();
@@ -229,14 +259,27 @@ export class ConnectionManager {
         GlobalState.connectionLines.forEach(line => {
             this.sceneManager.scene.remove(line);
             if (line.geometry) line.geometry.dispose();
-            if (line.material) line.material.dispose();
+            // Return materials to pool instead of disposing
+            if (line.material && line.userData.isWormhole) {
+                this.wormholeMaterialPool.push(line.material);
+            } else if (line.material && line.userData.isWormholeParticles) {
+                this.particleMaterialPool.push(line.material);
+            } else if (line.material) {
+                line.material.dispose();
+            }
         });
         GlobalState.connectionLines = [];
 
-        // Restore original emissive intensities
-        GlobalState.originalMaterials.forEach((originalData, mesh) => {
-            if (mesh.material && typeof originalData.emissiveIntensity === 'number') {
-                mesh.material.emissiveIntensity = originalData.emissiveIntensity;
+        // Restore original materials and return used materials to pool
+        GlobalState.originalMaterials.forEach((originalMaterial, mesh) => {
+            if (mesh.material !== originalMaterial) {
+                // Return material to appropriate pool before restoring
+                if (mesh.material.opacity === 0.3) {
+                    this.dimmedMaterialPool.push(mesh.material);
+                } else {
+                    this.glowMaterialPool.push(mesh.material);
+                }
+                mesh.material = originalMaterial;
             }
         });
         GlobalState.originalMaterials.clear();
@@ -247,6 +290,7 @@ export class ConnectionManager {
         });
 
         GlobalState.connectedSystemMeshes = [];
+        GlobalState.currentConnectionSystem = null; // Reset current connection system
     }
 
     // Show all system connections (direct wormholes only)
@@ -401,8 +445,14 @@ export class ConnectionManager {
         GlobalState.allSystemConnections.forEach(line => {
             this.sceneManager.scene.remove(line);
             if (line.geometry) line.geometry.dispose();
-            if (line.material) line.material.dispose();
+            // Return materials to pool instead of disposing
+            if (line.material && (line.userData.isAllConnectionsWormhole || line.userData.isAllConnectionsParticles)) {
+                this.wormholeMaterialPool.push(line.material);
+            } else if (line.material) {
+                line.material.dispose();
+            }
         });
         GlobalState.allSystemConnections = [];
+        GlobalState.currentConnectionSystem = null; // Reset current connection system
     }
 }

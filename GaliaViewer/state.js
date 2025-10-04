@@ -18,6 +18,7 @@ export class GlobalState {
     static connectionLines = [];
     static connectedSystemMeshes = [];
     static originalMaterials = new Map();
+    static currentConnectionSystem = null; // Track which system currently has connections displayed
 
     // Camera centering
     static lastClickedSystemData = null;
@@ -39,6 +40,7 @@ export class GlobalState {
         this.connectionLines = [];
         this.connectedSystemMeshes = [];
         this.originalMaterials.clear();
+        this.currentConnectionSystem = null;
         this.lastClickedSystemData = null;
         this.showAllConnectionsMode = false;
         this.centerButtonConnectionsVisible = false;

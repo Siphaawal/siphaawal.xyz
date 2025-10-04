@@ -88,8 +88,8 @@ export class SceneManager {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
-        this.controls.maxDistance = 5000; // Increased max zoom out
-        this.controls.minDistance = 0.5;  // Decreased min zoom in
+        this.controls.maxDistance = Infinity; // Remove max distance limit completely
+        this.controls.minDistance = 0.01;     // Allow very close zoom
         this.controls.maxPolarAngle = Math.PI;
         this.controls.mouseButtons = {
             LEFT: THREE.MOUSE.ROTATE,
@@ -97,10 +97,16 @@ export class SceneManager {
             RIGHT: THREE.MOUSE.PAN
         };
         this.controls.enableZoom = true;
-        this.controls.zoomSpeed = 1.5;  // Increased zoom speed
+        this.controls.zoomSpeed = 8.0;  // Much higher base zoom speed
         this.controls.enablePan = true;
         this.controls.panSpeed = 1.0;
         this.controls.screenSpacePanning = true;
+
+        // Ensure zoom doesn't get disabled due to limits
+        this.controls.addEventListener('change', () => {
+            this.updateControlSensitivity();
+        });
+
         this.updateControlSensitivity();
     }
 
@@ -116,19 +122,37 @@ export class SceneManager {
     updateControlSensitivity() {
         const dist = this.camera.position.length();
         const baseSensitivity = Math.max(0.5, Math.min(3.0, dist / 100));
-        
+
         // Dynamic sensitivity based on distance
         this.controls.rotateSpeed = baseSensitivity;
         this.controls.panSpeed = baseSensitivity * 0.8;
-        
-        // Enhanced zoom sensitivity that scales with distance
-        const zoomFactor = Math.max(1.0, Math.log10(dist));
-        this.controls.zoomSpeed = baseSensitivity * zoomFactor;
-        
-        // Update frustum to handle extreme zoom levels
-        this.camera.near = Math.min(0.1, dist * 0.001);
-        this.camera.far = Math.max(5000, dist * 10);
+
+        // Extremely aggressive zoom sensitivity that scales dramatically with distance
+        // Much higher multipliers for faster zooming
+        let zoomFactor;
+        if (dist < 20) {
+            zoomFactor = 5.0; // Fast even when very close
+        } else if (dist < 100) {
+            zoomFactor = 10.0; // Very fast at close-medium distance
+        } else if (dist < 500) {
+            zoomFactor = 15.0; // Extremely fast at medium distance
+        } else if (dist < 2000) {
+            zoomFactor = 20.0; // Super fast for far views
+        } else {
+            // Scale up to maximum of 30x for very far distances
+            zoomFactor = Math.min(30.0, 20.0 + (dist - 2000) / 200);
+        }
+        this.controls.zoomSpeed = zoomFactor;
+
+        // Dynamic frustum to handle all zoom levels from very close to extremely far
+        this.camera.near = Math.max(0.001, Math.min(0.1, dist * 0.0001));
+        this.camera.far = Math.max(10000, dist * 20);
         this.camera.updateProjectionMatrix();
+
+        // Soft warning if too far out (optional, can remove if annoying)
+        if (dist > 50000) {
+            console.log('Camera very far from origin:', dist.toFixed(0), 'units');
+        }
     }
 
     createInstancedMeshes(systemCount) {
@@ -626,6 +650,11 @@ export class SceneManager {
 
         // Update controls
         this.controls.update();
+
+        // Process WASD keyboard movement
+        if (GlobalState.eventHandlers) {
+            GlobalState.eventHandlers.processKeyboardMovement();
+        }
         this.updateControlSensitivity();
 
         // Animate starfield less frequently for performance
@@ -722,6 +751,16 @@ export class SceneManager {
         // Update InstancedMesh matrices
         if (this.planetInstancedMesh) {
             this.planetInstancedMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        // Update fleet animations
+        if (GlobalState.fleetVisualizer) {
+            GlobalState.fleetVisualizer.updateFleetAnimations();
+        }
+
+        // Update WebGL effects
+        if (GlobalState.webglEffects) {
+            GlobalState.webglEffects.update();
         }
 
         // Render

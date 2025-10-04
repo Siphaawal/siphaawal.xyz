@@ -166,8 +166,12 @@ class ClaimStakeApp {
                 console.log('🏗️ Refreshing explorer view...');
                 this.buildingExplorer.renderBuildings();
                 this.buildingExplorer.updateStats();
+            } else if (tabName === 'construction') {
+                console.log('🏗️ Initializing construction tab...');
+                if (typeof initializeConstructionTab === 'function') {
+                    initializeConstructionTab(this.data);
+                }
             }
-
             console.log('✅ Tab switch complete');
         } else {
             console.error('❌ Tab switch failed - missing elements');

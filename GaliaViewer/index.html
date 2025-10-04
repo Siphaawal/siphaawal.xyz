@@ -187,8 +187,8 @@
     <div class="header">
         <h1>🚀 Galia Viewer - 3D Star Map</h1>
         <div class="controls">
-            <button onclick="resetView()">Reset View</button>
-            <button onclick="window.location.href='../index.html'" class="back-btn">
+            <button id="resetViewBtn">Reset View</button>
+            <button id="backToHubBtn" class="back-btn">
                 ← Back to Hub
             </button>
         </div>
@@ -203,33 +203,124 @@
 
         <div id="planetMap"></div>
 
-        <!-- 3D Viewer Controls -->
-        <div style="position: absolute; top: 70px; left: 20px; display: flex; gap: 15px; align-items: center; z-index: 1000;">
+        <!-- Audio and View Controls (Top Left) -->
+        <div style="position: absolute; top: 70px; left: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000;">
             <!-- Volume Control Slider -->
             <div style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 12px; background: rgba(0, 0, 0, 0.7); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
                 <span id="volumeIcon">🔊</span>
                 <span style="font-size: 11px;">Volume</span>
                 <input type="range" id="volumeSlider" min="0" max="100" value="50"
-                       onchange="window.galiaViewer?.audioManager?.setVolume(this.value)"
-                       oninput="window.galiaViewer?.audioManager?.setVolume(this.value)"
                        style="width: 80px; height: 4px; background: #333; border-radius: 2px; outline: none; cursor: pointer;">
                 <span id="volumePercent" style="font-size: 10px; color: #ccc; min-width: 25px;">50%</span>
             </div>
 
             <!-- Show All Connections Checkbox -->
             <label style="display: flex; align-items: center; gap: 6px; color: #fff; font-size: 12px; cursor: pointer; background: rgba(0, 0, 0, 0.7); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                <input type="checkbox" id="showAllConnectionsCheckbox" onchange="window.galiaViewer?.uiManager?.toggleShowAllConnections(this.checked)"
+                <input type="checkbox" id="showAllConnectionsCheckbox"
                        style="margin: 0; cursor: pointer;">
                 <span>🔗 Show All Connections</span>
             </label>
 
             <!-- Center on Last Star Button -->
-            <button id="centerLastClickedBtn" onclick="window.galiaViewer?.uiManager?.handleCenterButtonClick()"
-                    style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; display: none; position: relative;"
+            <button id="centerLastClickedBtn"
+                    style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; display: none;"
                     title="Center camera on last clicked star and toggle connections">
                 <span id="centerButtonText">🎯 Center on Last Star</span>
                 <span id="centerButtonIndicator" style="display: none; margin-left: 8px;">✓</span>
             </button>
+        </div>
+
+        <!-- Bottom Left Panels Container -->
+        <div style="position: fixed; bottom: 20px; left: 20px; display: flex; gap: 15px; z-index: 1000; align-items: flex-end;">
+            <!-- Controls Info Panel (Expandable) -->
+            <div id="controlsPanel" style="background: rgba(0, 0, 0, 0.9); color: white; padding: 15px; border-radius: 8px; border: 2px solid #2196F3; min-width: 300px; max-width: 350px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; box-shadow: 0 4px 20px rgba(33, 150, 243, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #2196F3; padding-bottom: 8px;">
+                    <h3 style="margin: 0; color: #2196F3; font-size: 14px;">⌨️ Controls</h3>
+                    <button id="toggleControlsPanel" style="background: transparent; border: none; color: #2196F3; font-size: 18px; cursor: pointer; padding: 0 5px;">−</button>
+                </div>
+                <div id="controlsPanelContent">
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <li>🖱️ <strong>Click & Drag:</strong> Rotate view</li>
+                        <li>⭐ <strong>Single-click Star:</strong> Show connections</li>
+                        <li>🎯 <strong>Double-click Star:</strong> System overview</li>
+                        <li>🪐 <strong>Single-click Planet:</strong> Show info</li>
+                        <li>🏗️ <strong>Double-click Planet:</strong> Build facility</li>
+                        <li>🔍 <strong>Mouse Wheel:</strong> Zoom in/out</li>
+                        <li>⌨️ <strong>WASD:</strong> Move camera</li>
+                        <li>⌨️ <strong>Escape:</strong> Reset to full map</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Fleet Viewer Panel will be inserted here by fleet-ui.js -->
+
+            <!-- WebGL Effects Control Panel - DISABLED due to rendering issues -->
+            <div id="webglEffectsPanel" style="display: none; background: rgba(0, 0, 0, 0.9); color: white; padding: 15px; border-radius: 8px; border: 2px solid #FF00FF; min-width: 300px; max-width: 350px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; box-shadow: 0 4px 20px rgba(255, 0, 255, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #FF00FF; padding-bottom: 8px;">
+                    <h3 style="margin: 0; color: #FF00FF; font-size: 14px;">✨ WebGL Effects</h3>
+                    <button id="toggleWebGLPanel" style="background: transparent; border: none; color: #FF00FF; font-size: 18px; cursor: pointer; padding: 0 5px;">−</button>
+                </div>
+                <div id="webglPanelContent">
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                        <!-- Holographic Fleets -->
+                        <div style="background: rgba(0, 255, 255, 0.1); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #00FFFF; font-weight: bold;">🚀 Holographic Fleets</span>
+                                <button id="toggleHoloFleets" style="background: #555; color: white; border: none; padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: 10px;">Show</button>
+                            </div>
+                            <div style="font-size: 10px; color: #aaa;">Animated holographic ship models</div>
+                        </div>
+
+                        <!-- Energy Shields -->
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 255, 136, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #00FF88; font-weight: bold;">🛡️ Energy Shields</span>
+                                <button id="toggleShields" style="background: #00FF88; color: black; border: none; padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: 10px;">Toggle</button>
+                            </div>
+                            <div style="font-size: 10px; color: #aaa;">Click stars to toggle shields</div>
+                        </div>
+
+                        <!-- Wormhole Portals -->
+                        <div style="background: rgba(255, 0, 255, 0.1); padding: 10px; border-radius: 4px; border: 1px solid rgba(255, 0, 255, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #FF00FF; font-weight: bold;">🌀 Wormhole Portals</span>
+                                <button id="toggleWormholes" style="background: #FF00FF; color: white; border: none; padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: 10px;">Show</button>
+                            </div>
+                            <div style="font-size: 10px; color: #aaa;">Animated portals on connections</div>
+                        </div>
+
+                        <!-- Space Atmosphere -->
+                        <div style="background: rgba(136, 136, 255, 0.1); padding: 10px; border-radius: 4px; border: 1px solid rgba(136, 136, 255, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #8888FF; font-weight: bold;">🌌 Space Atmosphere</span>
+                                <button id="toggleAtmosphere" style="background: #555; color: white; border: none; padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: 10px;">Show</button>
+                            </div>
+                            <div style="font-size: 10px; color: #aaa;">Nebulas and cosmic dust</div>
+                        </div>
+
+                        <!-- Stats Display -->
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px;">
+                            <div style="font-size: 10px; color: #ccc; line-height: 1.6;">
+                                <div><strong>Effects Active:</strong></div>
+                                <div>• Holo Fleets: <span id="holoFleetCount">3</span></div>
+                                <div>• Energy Shields: <span id="shieldCount">0</span></div>
+                                <div>• Wormholes: <span id="wormholeCount">0</span></div>
+                                <div>• Particle Systems: <span id="particleCount">0</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button id="demoAllEffects" style="flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
+                                🎬 Demo All
+                            </button>
+                            <button id="clearAllEffects" style="flex: 1; background: #f44336; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                🧹 Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Click Status Display -->
@@ -243,7 +334,7 @@
         <div id="objectDetailsPopup" style="position: absolute; top: 70px; right: 20px; background: rgba(0, 0, 0, 0.9); color: #fff; padding: 15px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.3); display: none; z-index: 1001; max-width: 350px; min-width: 280px; backdrop-filter: blur(5px);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 8px;">
                 <div id="objectDetailsTitle" style="font-weight: bold; color: #4CAF50; font-size: 14px;"></div>
-                <button onclick="document.getElementById('objectDetailsPopup').style.display='none'"
+                <button id="closeObjectDetailsBtn"
                         style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;">
                     ✕
                 </button>
@@ -262,18 +353,6 @@
         <source src="../SFX/Single-Click-Planet.wav" type="audio/wav">
     </audio>
 
-    <div class="instructions">
-        <h3>Controls:</h3>
-        <ul>
-            <li>🖱️ <strong>Click & Drag:</strong> Rotate view</li>
-            <li>⭐ <strong>Single-click Star:</strong> Show connections & center button</li>
-            <li>🎯 <strong>Double-click Star:</strong> System overview & planet selection</li>
-            <li>🪐 <strong>Single-click Planet:</strong> Show connections</li>
-            <li>🏗️ <strong>Double-click Planet:</strong> Building interface</li>
-            <li>🔍 <strong>Scroll:</strong> Zoom in/out</li>
-            <li>⌨️ <strong>Escape:</strong> Reset to full map</li>
-        </ul>
-    </div>
 
     <!-- Load Data -->
     <script src="../Data/planet-data.js"></script>
@@ -295,25 +374,256 @@
     <script type="module" src="events.js"></script>
     <script type="module" src="ui.js"></script>
     <script type="module" src="audio.js"></script>
+    <!-- WebGL effects disabled - causing rendering issues -->
+    <!-- <script type="module" src="webgl-integration.js"></script> -->
+    <!-- <script type="module" src="webgl-effects.js"></script> -->
 
     <!-- Load Core Last -->
     <script type="module" src="core.js"></script>
 
     <script>
-        // Global functions
-        function resetView() {
-            if (window.galiaViewer && window.galiaViewer.eventHandlers) {
-                window.galiaViewer.eventHandlers.restoreAllSystems();
-            }
-        }
-
         // Initialize 3D map and hide loading indicator once everything is loaded
         window.addEventListener('load', async () => {
+            // Setup event listeners for buttons
+            document.getElementById('resetViewBtn')?.addEventListener('click', () => {
+                if (window.galiaViewer && window.galiaViewer.eventHandlers) {
+                    window.galiaViewer.eventHandlers.restoreAllSystems();
+                }
+            });
+
+            document.getElementById('backToHubBtn')?.addEventListener('click', () => {
+                window.location.href = '../index.html';
+            });
+
+            document.getElementById('volumeSlider')?.addEventListener('input', (e) => {
+                if (window.galiaViewer?.audioManager) {
+                    window.galiaViewer.audioManager.setVolume(e.target.value);
+                }
+            });
+
+            document.getElementById('showAllConnectionsCheckbox')?.addEventListener('change', (e) => {
+                if (window.galiaViewer?.uiManager) {
+                    window.galiaViewer.uiManager.toggleShowAllConnections(e.target.checked);
+                }
+            });
+
+            document.getElementById('centerLastClickedBtn')?.addEventListener('click', () => {
+                if (window.galiaViewer?.uiManager) {
+                    window.galiaViewer.uiManager.handleCenterButtonClick();
+                }
+            });
+
+            document.getElementById('closeObjectDetailsBtn')?.addEventListener('click', () => {
+                document.getElementById('objectDetailsPopup').style.display = 'none';
+            });
+
+            // Toggle controls panel
+            document.getElementById('toggleControlsPanel')?.addEventListener('click', () => {
+                const content = document.getElementById('controlsPanelContent');
+                const toggleBtn = document.getElementById('toggleControlsPanel');
+
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    toggleBtn.textContent = '−';
+                } else {
+                    content.style.display = 'none';
+                    toggleBtn.textContent = '+';
+                }
+            });
+
+            // Toggle WebGL effects panel
+            document.getElementById('toggleWebGLPanel')?.addEventListener('click', () => {
+                const content = document.getElementById('webglPanelContent');
+                const toggleBtn = document.getElementById('toggleWebGLPanel');
+
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    toggleBtn.textContent = '−';
+                } else {
+                    content.style.display = 'none';
+                    toggleBtn.textContent = '+';
+                }
+            });
+
+            // WebGL Effects Control Handlers
+            let holoFleetsVisible = false;  // Start with effects disabled
+            let wormholesVisible = false;
+            let shieldMode = false;
+            let atmosphereActive = false;
+
+            // Update stats display
+            function updateEffectsStats() {
+                if (window.galiaViewer?.webglEffects) {
+                    const stats = window.galiaViewer.webglEffects.getEffectsStats();
+                    document.getElementById('holoFleetCount').textContent = stats.holographicFleets || 0;
+                    document.getElementById('shieldCount').textContent = stats.energyShields || 0;
+                    document.getElementById('wormholeCount').textContent = stats.wormholes || 0;
+                    document.getElementById('particleCount').textContent = stats.particleSystems || 0;
+                }
+            }
+
+            // Update stats every 2 seconds
+            setInterval(updateEffectsStats, 2000);
+
+            // Toggle holographic fleets
+            document.getElementById('toggleHoloFleets')?.addEventListener('click', () => {
+                const btn = document.getElementById('toggleHoloFleets');
+                holoFleetsVisible = !holoFleetsVisible;
+                btn.textContent = holoFleetsVisible ? 'Hide' : 'Show';
+                btn.style.background = holoFleetsVisible ? '#FF8800' : '#555';
+
+                if (window.galiaViewer?.webglEffects) {
+                    if (!holoFleetsVisible) {
+                        // Hide all holographic fleets
+                        window.galiaViewer.webglEffects.holographicFleets.forEach((fleet, id) => {
+                            window.galiaViewer.webglEffects.removeHolographicFleet(id);
+                        });
+                    } else {
+                        // Recreate demo fleets
+                        window.galiaViewer.webglEffects.setupDemoMode();
+                    }
+                    updateEffectsStats();
+                }
+            });
+
+            // Toggle atmosphere
+            document.getElementById('toggleAtmosphere')?.addEventListener('click', () => {
+                const btn = document.getElementById('toggleAtmosphere');
+                atmosphereActive = !atmosphereActive;
+                btn.textContent = atmosphereActive ? 'Hide' : 'Show';
+                btn.style.background = atmosphereActive ? '#FF8800' : '#555';
+
+                if (window.galiaViewer?.webglEffects) {
+                    if (atmosphereActive) {
+                        // Create space dust and nebulas
+                        window.galiaViewer.webglEffects.createSpaceDust();
+                        window.galiaViewer.webglEffects.createNebulaClouds();
+                    } else {
+                        // Remove all particle systems
+                        window.galiaViewer.webglEffects.particleSystems.forEach(system => {
+                            window.galiaViewer.sceneManager.scene.remove(system);
+                            system.geometry.dispose();
+                            system.material.dispose();
+                        });
+                        window.galiaViewer.webglEffects.particleSystems = [];
+                    }
+                    updateEffectsStats();
+                }
+            });
+
+            // Toggle shields mode
+            document.getElementById('toggleShields')?.addEventListener('click', () => {
+                const btn = document.getElementById('toggleShields');
+                shieldMode = !shieldMode;
+                btn.textContent = shieldMode ? 'Active' : 'Toggle';
+                btn.style.background = shieldMode ? '#FF0000' : '#00FF88';
+
+                if (shieldMode) {
+                    console.log('Shield mode active - click stars to toggle shields');
+                } else {
+                    console.log('Shield mode disabled');
+                }
+            });
+
+            // Toggle wormholes
+            document.getElementById('toggleWormholes')?.addEventListener('click', () => {
+                const btn = document.getElementById('toggleWormholes');
+                wormholesVisible = !wormholesVisible;
+                btn.textContent = wormholesVisible ? 'Hide' : 'Show';
+                btn.style.background = wormholesVisible ? '#FF8800' : '#555';
+
+                if (window.galiaViewer?.webglEffects && window.galiaViewer?.sceneManager) {
+                    if (wormholesVisible) {
+                        // Create demo wormholes between random systems
+                        const systems = window.planetData?.mapData || [];
+                        if (systems.length >= 2) {
+                            // Get THREE from scene manager
+                            const containerGroups = window.galiaViewer.sceneManager.systemContainers;
+                            for (let i = 0; i < Math.min(5, containerGroups.length - 1); i++) {
+                                const pos1 = containerGroups[i].position.clone();
+                                const pos2 = containerGroups[i + 1].position.clone();
+                                window.galiaViewer.webglEffects.createWormhole(pos1, pos2);
+                            }
+                        }
+                    } else {
+                        window.galiaViewer.webglEffects.clearWormholes();
+                    }
+                    updateEffectsStats();
+                }
+            });
+
+            // Demo all effects
+            document.getElementById('demoAllEffects')?.addEventListener('click', () => {
+                console.log('🎬 Running WebGL effects demo...');
+
+                if (window.galiaViewer?.webglEffects && window.galiaViewer?.sceneManager) {
+                    const effects = window.galiaViewer.webglEffects;
+                    const containerGroups = window.galiaViewer.sceneManager.systemContainers;
+
+                    // Show atmosphere
+                    if (!atmosphereActive) {
+                        document.getElementById('toggleAtmosphere').click();
+                    }
+
+                    // Show holographic fleets
+                    if (!holoFleetsVisible) {
+                        document.getElementById('toggleHoloFleets').click();
+                    }
+
+                    // Add shields to first 3 systems
+                    for (let i = 0; i < Math.min(3, containerGroups.length); i++) {
+                        const container = containerGroups[i];
+                        const pos = container.position.clone();
+                        const systemKey = container.userData?.system?.key || `system_${i}`;
+                        effects.createEnergyShield(systemKey, pos, 8);
+                    }
+
+                    // Show wormholes
+                    if (!wormholesVisible) {
+                        document.getElementById('toggleWormholes').click();
+                    }
+
+                    updateEffectsStats();
+                    console.log('✅ Demo complete! All effects active.');
+                }
+            });
+
+            // Clear all effects
+            document.getElementById('clearAllEffects')?.addEventListener('click', () => {
+                if (window.galiaViewer?.webglEffects) {
+                    // Clear atmosphere
+                    if (atmosphereActive) {
+                        document.getElementById('toggleAtmosphere').click();
+                    }
+
+                    // Clear holographic fleets
+                    if (holoFleetsVisible) {
+                        document.getElementById('toggleHoloFleets').click();
+                    }
+
+                    // Clear wormholes
+                    if (wormholesVisible) {
+                        document.getElementById('toggleWormholes').click();
+                    }
+
+                    // Clear shields
+                    window.galiaViewer.webglEffects.clearAllEffects();
+
+                    updateEffectsStats();
+                    console.log('🧹 All effects cleared');
+                }
+            });
+
             try {
                 // Initialize the 3D map
                 if (window.initPlanetMap) {
                     await window.initPlanetMap();
                     console.log('✅ 3D map initialized successfully');
+
+                    // Initial stats update
+                    setTimeout(() => {
+                        updateEffectsStats();
+                    }, 1000);
                 } else {
                     console.error('❌ initPlanetMap function not found');
                 }

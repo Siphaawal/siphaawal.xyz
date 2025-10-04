@@ -13,6 +13,7 @@
         <nav class="navigation-tabs">
             <button class="nav-tab active" data-tab="explorer">🏢 Explorer</button>
             <button class="nav-tab" data-tab="analytics">📊 Analytics</button>
+            <button class="nav-tab" data-tab="construction">🏗️ Construction</button>
         </nav>
 
         <nav class="breadcrumb">
@@ -187,6 +188,16 @@
                 <!-- Analytics content will be populated by JavaScript -->
             </div>
         </div>
+        <!-- Construction Tab Content -->
+        <div id="constructionTab" class="tab-content">
+            <div class="analytics-header">
+                <h2>🏗️ Facility Construction</h2>
+                <p>Select a planet and build your facility with compatible buildings</p>
+            </div>
+            <div id="constructionContent" style="padding: 20px;">
+                <!-- Construction content will be populated by JavaScript -->
+            </div>
+        </div>
     </main>
 
     <!-- Building Details Modal -->
@@ -213,6 +224,8 @@
     <script src="../Utils/BaseApp.js?v=20250925-2142" onload="console.log('✅ BaseApp.js loaded')" onerror="console.error('❌ Failed to load BaseApp.js')"></script>
     <script src="../Utils/DataLoader.js?v=20250925-2142" onload="console.log('✅ DataLoader.js loaded, DataLoader available:', typeof DataLoader !== 'undefined')" onerror="console.error('❌ Failed to load DataLoader.js')"></script>
     <script src="../Data/buildings-data.js?v=20250925-2142" onload="console.log('✅ buildings-data.js loaded, rawBuildingData available:', typeof rawBuildingData !== 'undefined')" onerror="console.error('❌ Failed to load buildings-data.js')"></script>
+    <script src="../Data/planet-data.js?v=20250925-2142" onload="console.log('u2705 planet-data.js loaded')" onerror="console.error('❌ Failed to load planet-data.js')"></script>
+    <script src="construction.js?v=20251003" onload="console.log('u2705 construction.js loaded')" onerror="console.error('❌ Failed to load construction.js')"></script>
     <script src="explorer.js?v=20250925-2142" onload="console.log('✅ explorer.js loaded')" onerror="console.error('❌ Failed to load explorer.js')"></script>
     <script src="analytics.js?v=20250925-2142" onload="console.log('✅ analytics.js loaded')" onerror="console.error('❌ Failed to load analytics.js')"></script>
     <script src="app.js?v=20250925-2142" onload="console.log('✅ app.js loaded - FRESH VERSION')" onerror="console.error('❌ Failed to load app.js')"></script>

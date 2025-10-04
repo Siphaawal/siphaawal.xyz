@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spaceship Model Verification</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            max-width: 400px;
+        }
+        h1 {
+            color: #00ffff;
+            margin-top: 0;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.1);
+            border-left: 3px solid #00ff00;
+        }
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 3px solid #ff0000;
+            color: #ff6666;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 600px;
+            margin-top: 20px;
+            border: 2px solid #00ff00;
+            background: #000;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>🚀 Spaceship Model Test</h1>
+        <div id="status"></div>
+        <button onclick="testSpaceship()">Test Spaceship Geometry</button>
+        <button onclick="location.reload()">Reload Page</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { FleetVisualizer } from './fleet-manager/fleet-visualizer.js?v=2.0';
+
+        const statusDiv = document.getElementById('status');
+
+        function addStatus(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = isError ? 'status error' : 'status';
+            div.textContent = message;
+            statusDiv.appendChild(div);
+        }
+
+        // Setup scene
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // Create mock scene manager
+        const mockSceneManager = {
+            scene: scene,
+            systemContainers: []
+        };
+
+        // Test function
+        window.testSpaceship = function() {
+            statusDiv.innerHTML = '';
+            addStatus('🔍 Testing spaceship geometry creation...');
+
+            try {
+                // Create fleet visualizer
+                const visualizer = new FleetVisualizer(mockSceneManager);
+                addStatus('✅ FleetVisualizer instantiated');
+
+                // Test if createSpaceshipGeometry method exists
+                if (typeof visualizer.createSpaceshipGeometry !== 'function') {
+                    addStatus('❌ createSpaceshipGeometry method not found!', true);
+                    addStatus('You are still using the OLD version with cones!', true);
+                    return;
+                }
+                addStatus('✅ createSpaceshipGeometry method found');
+
+                // Create a spaceship
+                const spaceship = visualizer.createSpaceshipGeometry();
+                addStatus('✅ Spaceship geometry created');
+
+                // Check if it's a Group (new version) vs single Mesh (old version)
+                if (spaceship instanceof THREE.Group) {
+                    addStatus('✅ Spaceship is a Group (NEW VERSION!)');
+                    addStatus(`   Contains ${spaceship.children.length} child objects`);
+
+                    // List components
+                    spaceship.children.forEach((child, i) => {
+                        if (child instanceof THREE.Mesh) {
+                            const geometryType = child.geometry.constructor.name;
+                            addStatus(`   - Part ${i + 1}: ${geometryType}`);
+                        } else if (child instanceof THREE.Points) {
+                            addStatus(`   - Part ${i + 1}: Particle System`);
+                        }
+                    });
+                } else {
+                    addStatus('❌ Spaceship is NOT a Group (OLD VERSION!)', true);
+                    addStatus('Browser is using cached files. Clear cache!', true);
+                }
+
+                // Add to scene for visualization
+                scene.add(spaceship);
+                spaceship.rotation.y = Math.PI / 4;
+
+                // Animate
+                function animate() {
+                    requestAnimationFrame(animate);
+                    spaceship.rotation.y += 0.01;
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                addStatus('✅ Spaceship added to scene - check 3D view!');
+
+            } catch (error) {
+                addStatus(`❌ Error: ${error.message}`, true);
+                console.error(error);
+            }
+        };
+
+        // Auto-test on load
+        addStatus('Page loaded. Click "Test Spaceship Geometry" button.');
+    </script>
+</body>
+</html>

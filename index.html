@@ -24,7 +24,7 @@
                 <div class="card-icon">🪐</div>
                 <h3>Planet Explorer</h3>
                 <p>Discover and analyze planets across star systems. Explore resource-rich worlds and their strategic value.</p>
-                <button class="launch-btn" onclick="window.location.href='PlanetExplorer/index.html'">
+                <button class="launch-btn" data-href="PlanetExplorer/index.html">
                     Launch Explorer
                 </button>
             </div>
@@ -33,7 +33,7 @@
                 <div class="card-icon">🌌</div>
                 <h3>Galia Viewer</h3>
                 <p>Immersive 3D star map viewer. Navigate through space, explore star systems, and visualize planets in three dimensions.</p>
-                <button class="launch-btn" onclick="window.location.href='GaliaViewer/index.html'">
+                <button class="launch-btn" data-href="GaliaViewer/index.html">
                     Launch Viewer
                 </button>
             </div>
@@ -42,7 +42,7 @@
                 <div class="card-icon">🧪</div>
                 <h3>Recipe Explorer</h3>
                 <p>Explore crafting recipes and their dependencies. Visualize complex recipe trees and resource chains.</p>
-                <button class="launch-btn" onclick="window.location.href='RecipeExplorer/index.html'">
+                <button class="launch-btn" data-href="RecipeExplorer/index.html">
                     Launch Explorer
                 </button>
             </div>
@@ -51,7 +51,7 @@
                 <div class="card-icon">🏗️</div>
                 <h3>ClaimStake Explorer</h3>
                 <p>Discover buildings for your claim stakes. Analyze construction costs, resource generation, and strategic planning.</p>
-                <button class="launch-btn" onclick="window.location.href='ClaimStakeExplorer/index.html'">
+                <button class="launch-btn" data-href="ClaimStakeExplorer/index.html">
                     Launch Explorer
                 </button>
             </div>
@@ -60,7 +60,7 @@
                 <div class="card-icon">⚒️</div>
                 <h3>Resources Explorer</h3>
                 <p>Browse and analyze all available resources. Compare values, categories, and inventory optimization data.</p>
-                <button class="launch-btn" onclick="window.location.href='ResourcesExplorer/index.html'">
+                <button class="launch-btn" data-href="ResourcesExplorer/index.html">
                     Launch Explorer
                 </button>
             </div>
@@ -71,5 +71,20 @@
     <footer class="main-footer">
         <p>&copy; 2024 SIPHAAWAL.XYZ | Exploring the Final Frontier</p>
     </footer>
+
+    <script>
+        // Add event listeners for navigation buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const launchButtons = document.querySelectorAll('.launch-btn[data-href]');
+            launchButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const href = button.getAttribute('data-href');
+                    if (href) {
+                        window.location.href = href;
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
